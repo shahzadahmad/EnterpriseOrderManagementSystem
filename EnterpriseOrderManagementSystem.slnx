@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/EnterpriseOrderManagementSystem.Api/EnterpriseOrderManagementSystem.Api.csproj" />
+    <Project Path="src/EnterpriseOrderManagementSystem.Application/EnterpriseOrderManagementSystem.Application.csproj" />
+    <Project Path="src/EnterpriseOrderManagementSystem.Contracts/EnterpriseOrderManagementSystem.Contracts.csproj" />
+    <Project Path="src/EnterpriseOrderManagementSystem.Domain/EnterpriseOrderManagementSystem.Domain.csproj" />
+    <Project Path="src/EnterpriseOrderManagementSystem.Infrastructure/EnterpriseOrderManagementSystem.Infrastructure.csproj" />
+    <Project Path="src/EnterpriseOrderManagementSystem.Shared/EnterpriseOrderManagementSystem.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/EnterpriseOrderManagementSystem.IntegrationTests/EnterpriseOrderManagementSystem.IntegrationTests.csproj" />
+    <Project Path="tests/EnterpriseOrderManagementSystem.UnitTests/EnterpriseOrderManagementSystem.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/workers/">
+    <Project Path="workers/EnterpriseOrderManagementSystem.NotificationWorker/EnterpriseOrderManagementSystem.NotificationWorker.csproj" />
+    <Project Path="workers/EnterpriseOrderManagementSystem.PaymentWorker/EnterpriseOrderManagementSystem.PaymentWorker.csproj" />
+  </Folder>
+</Solution>
