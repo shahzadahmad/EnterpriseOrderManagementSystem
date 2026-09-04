@@ -1,0 +1,50 @@
+Phase 2.12.1
+Inventory Aggregate
+InventoryStatus
+Aggregate design
+Phase 2.12.2
+Inventory.cs (Complete)
+Phase 2.12.3
+InventoryTransaction Entity
+Phase 2.12.4
+Inventory Domain Events
+Phase 2.12.5
+Unit Tests
+
+============
+
+
+I recommend splitting Phase 2.12.2 into these implementation steps:
+
+Phase 2.12.2.1 – Inventory Aggregate Skeleton
+Class definition
+Properties
+Constructors
+Factory method
+Computed Status
+#regions
+XML comments
+
+Phase 2.12.2.2 – Stock Management
+ReceiveStock()
+ReserveStock()
+ReleaseReservedStock()
+CommitReservation()
+
+Phase 2.12.2.3 – Inventory Administration
+AdjustStock()
+UpdateReorderLevel()
+UpdateMaximumQuantity()
+Discontinue()
+
+Phase 2.12.2.4 – Private Helpers
+Validation methods
+Invariant enforcement
+Quantity calculations
+Domain event raising
+
+Phase 2.12.2.5 – Final Review
+Full walkthrough
+Refactoring
+Best practices
+Interview discussion

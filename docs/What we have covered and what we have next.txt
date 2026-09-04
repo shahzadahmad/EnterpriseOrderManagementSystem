@@ -1,0 +1,281 @@
+We've made excellent progress. At this point, we've built a solid enterprise-grade Domain layer foundation instead of jumping directly into controllers and CRUD operations.
+
+Here's the roadmap with our current progress.
+
+Enterprise Order Management System Roadmap (.NET 10)
+Phase 1 – Solution Setup ✅ COMPLETED
+Solution Structure
+✅ Clean Architecture solution
+✅ Project references
+✅ Folder structure
+✅ Naming conventions
+✅ Directory layout
+Projects
+✅ Domain
+✅ Application
+✅ Infrastructure
+✅ API
+✅ Shared Kernel (if needed)
+✅ Unit Tests
+✅ Integration Tests
+Phase 2 – Domain Layer ✅ MOSTLY COMPLETED
+Core Building Blocks
+2.1 Base Entity
+✅ Entity<TKey>
+✅ Equality implementation
+2.2 Aggregate Root
+✅ AggregateRoot<TKey>
+✅ Domain Events collection
+2.3 Auditable Entity
+✅ CreatedOn
+✅ UpdatedOn
+✅ CreatedBy
+✅ UpdatedBy
+2.4 Domain Events Infrastructure
+✅ DomainEvent base class
+✅ MediatR integration
+✅ Aggregate event collection
+2.5 Value Objects
+✅ ValueObject base class
+✅ Email
+✅ Money
+🚧 Address (to enhance)
+🚧 PhoneNumber (to enhance)
+2.6 Domain Exceptions
+✅ DomainException
+✅ BusinessRuleViolationException
+✅ InvalidOrderStateException
+✅ ProductOutOfStockException
+✅ PaymentAlreadyCompletedException
+2.7 Enumerations & Constants
+✅ OrderStatus
+✅ PaymentStatus
+✅ InventoryStatus
+✅ UserRole
+✅ Validation constants
+2.8 Order Aggregate Root
+✅ Order
+✅ Business rules
+✅ State transitions
+✅ Encapsulation
+✅ Total calculation
+✅ Domain events
+2.9 OrderItem Entity
+✅ OrderItem
+✅ Quantity management
+✅ Money integration
+✅ Line total calculation
+✅ Aggregate ownership
+Domain Events
+✅ OrderCreatedDomainEvent
+✅ OrderConfirmedDomainEvent
+✅ OrderCancelledDomainEvent
+✅ OrderShippedDomainEvent
+✅ OrderDeliveredDomainEvent
+Remaining Domain Work
+2.10 Customer Aggregate
+
+We'll implement:
+
+Customer
+Email Value Object integration
+Address
+PhoneNumber
+Registration
+Customer status
+Domain events
+2.11 Product Aggregate
+
+We'll build:
+
+Product
+SKU
+Price
+Category
+Inventory
+Product status
+Stock rules
+2.12 Inventory Aggregate
+
+Including:
+
+Stock Reservation
+Stock Release
+Stock Adjustment
+Warehouse support
+2.13 Payment Aggregate
+
+Including:
+
+Payment lifecycle
+Authorization
+Capture
+Refund
+Failure handling
+2.14 Domain Services
+
+Examples:
+
+PricingService
+TaxCalculationService
+DiscountService
+CurrencyConversionService
+2.15 Specifications Pattern
+
+Examples:
+
+ActiveCustomerSpecification
+ProductInStockSpecification
+OrderCanBeCancelledSpecification
+2.16 Repository Interfaces
+
+Examples:
+
+IOrderRepository
+
+ICustomerRepository
+
+IProductRepository
+2.17 Unit Tests
+
+We'll write tests for every aggregate, value object, and business rule.
+
+Phase 3 – Application Layer
+
+This is where CQRS begins.
+
+We'll cover:
+
+Commands
+CreateOrderCommand
+ConfirmOrderCommand
+CancelOrderCommand
+ShipOrderCommand
+DeliverOrderCommand
+Queries
+GetOrderByIdQuery
+GetOrdersQuery
+GetCustomerOrdersQuery
+MediatR
+IRequest
+IRequestHandler
+Pipeline Behaviors
+FluentValidation
+
+Request validation for commands and queries.
+
+AutoMapper / Mapping
+
+Mapping between Domain, DTOs, and API models.
+
+Application Services
+
+Business orchestration without leaking domain logic.
+
+Phase 4 – Infrastructure Layer
+
+We'll implement:
+
+EF Core 10
+DbContext
+Entity Configurations
+Repository implementations
+SQL Server
+Migrations
+Unit of Work
+Transactions
+Concurrency
+Soft delete
+Auditing
+Phase 5 – Web API
+
+We'll build:
+
+Minimal APIs / Controllers
+Authentication (JWT)
+Authorization
+ProblemDetails
+Versioning
+Swagger/OpenAPI
+Rate Limiting
+Health Checks
+Phase 6 – Security
+
+We'll cover:
+
+JWT
+Refresh Tokens
+Role-Based Authorization
+Policy-Based Authorization
+Claims
+Identity
+Password hashing
+Phase 7 – Caching
+
+We'll implement:
+
+IMemoryCache
+HybridCache (.NET 10)
+Redis
+Cache invalidation
+Phase 8 – Messaging
+
+We'll cover:
+
+MediatR Notifications
+Kafka
+Azure Service Bus
+RabbitMQ
+Outbox Pattern
+Inbox Pattern
+Phase 9 – Observability
+
+We'll implement:
+
+OpenTelemetry
+Serilog
+Structured logging
+Metrics
+Tracing
+Health monitoring
+Phase 10 – Testing
+
+We'll write:
+
+Unit Tests
+Integration Tests
+API Tests
+Repository Tests
+Domain Tests
+Phase 11 – DevOps
+
+We'll cover:
+
+Docker
+Docker Compose
+GitHub Actions / Azure DevOps
+CI/CD
+Kubernetes basics
+Azure deployment
+Phase 12 – Performance
+
+We'll implement:
+
+Span<T>
+Memory<T>
+ArrayPool<T>
+ValueTask
+Native AOT
+HTTP/3
+Rate Limiting
+BenchmarkDotNet
+Before Moving to Phase 3
+
+Although we've completed the core of the Domain layer, there are a few refinements I'd recommend before we start the Application layer:
+
+🔄 Enhance the Money value object with arithmetic operators (+, -, *) and currency validation.
+🔄 Complete the Address and PhoneNumber value objects.
+🔄 Implement the Customer, Product, and Payment aggregates.
+🔄 Add unit tests for all domain components.
+
+Once those are in place, the Domain layer will be truly production-ready and provide a strong foundation for the CQRS/Application layer.

@@ -1,0 +1,17 @@
+Payment Aggregate Responsibilities
+
+Payment
+│
+├── Payment Status
+├── Payment Method
+├── Amount
+├── Currency
+├── Provider Reference
+├── Authorization Code
+├── Transaction Reference
+├── Authorization Date
+├── Capture Date
+├── Settlement Date
+├── Refund Date
+├── Failure Reason
+└── Domain Events

@@ -1,0 +1,7 @@
+Phase 2.11 – Product Aggregate
+Phase 2.12 – Inventory Aggregate
+Phase 2.13 – Payment Aggregate
+Phase 2.14 – Domain Services
+Phase 2.15 – Specifications Pattern
+Phase 2.16 – Repository Interfaces
+Phase 2.17 – Domain Unit Tests

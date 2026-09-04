@@ -1,0 +1,17 @@
+After Phase 3
+
+We'll continue with:
+
+Phase 4  Infrastructure Layer
+
+Phase 5  Web API
+
+Phase 6  Authentication & Authorization
+
+Phase 7  Docker
+
+Phase 8  Azure
+
+Phase 9  CI/CD
+
+Phase 10 Performance & Production Readiness

@@ -1,0 +1,27 @@
+Phase 3 – Application Layer (Clean Architecture)
+
+We'll build it in this order:
+
+Phase 3
+
+3.1 Project Structure
+
+3.2 Dependency Injection
+
+3.3 CQRS
+
+3.4 Commands
+
+3.5 Queries
+
+3.6 Handlers
+
+3.7 DTOs
+
+3.8 Validators
+
+3.9 MediatR Pipeline Behaviors
+
+3.10 Mapping
+
+3.11 Application Unit Tests

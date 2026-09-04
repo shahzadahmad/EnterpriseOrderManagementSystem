@@ -1,0 +1,76 @@
+Payment Aggregate Roadmap
+
+We'll build it in the following steps:
+
+Phase 2.13 – Payment Aggregate
+
+2.13.1 Payment Enums
+
+2.13.2 Payment Domain Events
+
+2.13.3 Payment Aggregate Skeleton
+
+2.13.4 Factory Method
+
+2.13.5 Payment Authorization
+
+2.13.6 Payment Capture
+
+2.13.7 Settlement
+
+2.13.8 Refund
+
+2.13.9 Cancel Payment
+
+2.13.10 Payment Validation Helpers
+
+2.13.11 Final Payment Aggregate
+
+=======================
+
+Payment Lifecycle
+
+The aggregate will enforce the following business flow:
+
+Create Payment
+       │
+       ▼
+Pending
+       │
+       ▼
+Authorize
+       │
+       ▼
+Authorized
+       │
+       ▼
+Capture
+       │
+       ▼
+Captured
+       │
+       ▼
+Settled
+
+
+Alternative flows:
+
+
+Pending
+   │
+   ▼
+Cancelled
+
+--
+
+Authorized
+   │
+   ▼
+Failed
+
+--
+
+Captured
+   │
+   ▼
+Refunded

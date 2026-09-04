@@ -1,0 +1,17 @@
+One More Enterprise Improvement
+
+Since we're building this as a Senior/Lead-level project, I'd also suggest replacing repetitive if validations in the factory with reusable guard methods once we introduce a Guard utility class.
+
+For example:
+
+Guard.Against.EmptyGuid(inventoryId, nameof(inventoryId));
+
+Guard.Against.EmptyGuid(productId, nameof(productId));
+
+Guard.Against.EmptyGuid(warehouseId, nameof(warehouseId));
+
+Guard.Against.Negative(reorderLevel, nameof(reorderLevel));
+
+Guard.Against.ZeroOrNegative(maximumQuantity, nameof(maximumQuantity));
+
+This makes factory methods across all aggregates (Order, Customer, Product, Inventory, Payment) much shorter and more consistent.

@@ -1,0 +1,127 @@
+Remaining Domain Work
+Phase 2.13 – Payment Aggregate
+
+This will include much more than just a Payment entity.
+
+Payment Aggregate
+Payment
+│
+├── PaymentTransaction
+├── Refund
+├── PaymentMethod
+├── PaymentStatus
+├── PaymentType
+├── Payment Provider Reference
+├── Authorization
+├── Capture
+├── Settlement
+├── Refund Logic
+├── Cancellation
+└── Domain Events
+
+Domain Events:
+
+PaymentInitiatedDomainEvent
+PaymentAuthorizedDomainEvent
+PaymentCapturedDomainEvent
+PaymentFailedDomainEvent
+PaymentRefundedDomainEvent
+PaymentCancelledDomainEvent
+
+
+Phase 2.14 – Domain Services
+
+Some business logic does not naturally belong to a single aggregate.
+
+Examples:
+
+PricingDomainService
+
+InventoryReservationService
+
+DiscountCalculationService
+
+TaxCalculationService
+
+ShippingCostCalculationService
+
+OrderTotalCalculationService
+
+We'll also discuss:
+
+When to use Domain Services
+When not to use them
+Common DDD mistakes
+
+
+Phase 2.15 – Specification Pattern
+
+We'll build a reusable Specification framework.
+
+Example:
+
+ISpecification<T>
+
+BaseSpecification<T>
+
+SpecificationEvaluator
+
+Composite Specifications
+
+Expression Builder
+
+Then implement specifications such as:
+
+ActiveCustomerSpecification
+AvailableInventorySpecification
+PendingOrderSpecification
+ProductByCategorySpecification
+OrdersByDateRangeSpecification
+
+This pattern becomes very useful in the Infrastructure layer with EF Core.
+
+Phase 2.16 – Repository Interfaces
+
+We'll define repository contracts for each aggregate.
+
+Examples:
+
+IOrderRepository
+
+ICustomerRepository
+
+IProductRepository
+
+IInventoryRepository
+
+IPaymentRepository
+
+Each repository will expose only behaviors that make sense for its aggregate and support asynchronous operations with CancellationToken.
+
+Phase 2.17 – Domain Unit Tests
+
+We'll thoroughly test the domain model.
+
+Aggregate Tests
+Order
+Customer
+Product
+Inventory
+Payment
+Domain Event Tests
+
+Verify that events are raised correctly.
+
+Business Rule Tests
+
+Ensure invalid operations throw the expected exceptions.
+
+Value Object Tests
+
+Verify equality, validation, and immutability.
+
+We'll use:
+
+xUnit
+FluentAssertions
+Test data builders where appropriate
