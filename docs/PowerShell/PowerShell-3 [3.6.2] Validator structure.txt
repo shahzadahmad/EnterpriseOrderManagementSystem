@@ -1,0 +1,13 @@
+$folders = @(
+    "Validators\Customers",
+    "Validators\Products",
+    "Validators\Orders",
+    "Validators\Inventory",
+    "Validators\Payments"
+)
+
+foreach ($folder in $folders) {
+    New-Item -ItemType Directory -Force `
+        -Path "EnterpriseOrderManagementSystem.Application\$folder" |
+        Out-Null
+}

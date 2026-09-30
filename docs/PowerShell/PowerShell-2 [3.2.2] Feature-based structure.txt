@@ -1,0 +1,47 @@
+Features
+│
+├── Customers
+│   ├── Commands
+│   └── Queries
+│
+├── Products
+│   ├── Commands
+│   └── Queries
+│
+├── Orders
+│   ├── Commands
+│   └── Queries
+│
+├── Inventory
+│   ├── Commands
+│   └── Queries
+│
+└── Payments
+    ├── Commands
+    └── Queries
+
+PowerShell:
+
+$folders = @(
+    "Features\Customers\Commands",
+    "Features\Customers\Queries",
+
+    "Features\Products\Commands",
+    "Features\Products\Queries",
+
+    "Features\Orders\Commands",
+    "Features\Orders\Queries",
+
+    "Features\Inventory\Commands",
+    "Features\Inventory\Queries",
+
+    "Features\Payments\Commands",
+    "Features\Payments\Queries"
+)
+
+foreach ($folder in $folders) {
+    New-Item -ItemType Directory -Force `
+        -Path "EnterpriseOrderManagementSystem.Application\$folder" |
+        Out-Null
+}
+

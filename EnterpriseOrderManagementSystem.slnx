@@ -8,6 +8,7 @@
     <Project Path="src/EnterpriseOrderManagementSystem.Shared/EnterpriseOrderManagementSystem.Shared.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/EnterpriseOrderManagementSystem.Application.Tests/EnterpriseOrderManagementSystem.Application.Tests.csproj" />
     <Project Path="tests/EnterpriseOrderManagementSystem.Domain.Tests/EnterpriseOrderManagementSystem.Domain.Tests.csproj" />
     <Project Path="tests/EnterpriseOrderManagementSystem.IntegrationTests/EnterpriseOrderManagementSystem.IntegrationTests.csproj" />
     <Project Path="tests/EnterpriseOrderManagementSystem.UnitTests/EnterpriseOrderManagementSystem.UnitTests.csproj" />

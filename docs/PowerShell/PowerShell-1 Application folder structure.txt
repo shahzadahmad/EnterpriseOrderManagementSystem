@@ -1,0 +1,28 @@
+$folders = @(
+    "Abstractions\Persistence",
+    "Abstractions\Services",
+    "Abstractions\Messaging",
+    "Behaviors",
+    "Common\Models",
+    "Common\Results",
+    "Common\Exceptions",
+    "Contracts",
+    "DTOs\Customers",
+    "DTOs\Products",
+    "DTOs\Orders",
+    "DTOs\Inventory",
+    "DTOs\Payments",
+    "Features\Customers",
+    "Features\Products",
+    "Features\Orders",
+    "Features\Inventory",
+    "Features\Payments",
+    "Mapping",
+    "Validators",
+    "DependencyInjection"
+)
+
+foreach ($folder in $folders) {
+    New-Item -ItemType Directory -Force `
+        -Path "EnterpriseOrderManagementSystem.Application\$folder" | Out-Null
+}

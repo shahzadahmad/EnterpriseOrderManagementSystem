@@ -456,7 +456,7 @@ public sealed class Inventory : AggregateRoot<Guid>
         var reservedBefore = ReservedQuantity;
 
         ReservedQuantity -= quantity;
-
+        
         UpdateLastMovement();
 
         RecordInventoryTransaction(
