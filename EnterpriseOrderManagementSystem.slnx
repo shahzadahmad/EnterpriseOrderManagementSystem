@@ -10,8 +10,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/EnterpriseOrderManagementSystem.Application.Tests/EnterpriseOrderManagementSystem.Application.Tests.csproj" />
     <Project Path="tests/EnterpriseOrderManagementSystem.Domain.Tests/EnterpriseOrderManagementSystem.Domain.Tests.csproj" />
-    <Project Path="tests/EnterpriseOrderManagementSystem.IntegrationTests/EnterpriseOrderManagementSystem.IntegrationTests.csproj" />
-    <Project Path="tests/EnterpriseOrderManagementSystem.UnitTests/EnterpriseOrderManagementSystem.UnitTests.csproj" />
+    <Project Path="tests/EnterpriseOrderManagementSystem.Infrastructure.Tests/EnterpriseOrderManagementSystem.Infrastructure.Tests.csproj" />
   </Folder>
   <Folder Name="/workers/">
     <Project Path="workers/EnterpriseOrderManagementSystem.NotificationWorker/EnterpriseOrderManagementSystem.NotificationWorker.csproj" />

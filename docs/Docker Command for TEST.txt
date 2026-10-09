@@ -1,0 +1,27 @@
+:: 1. Check Docker version and configuration
+docker version
+docker info
+
+:: 2. Pull the SQL Server 2022 image
+docker pull mcr.microsoft.com/mssql/server:2022-latest
+
+:: 3. Start a manual SQL Server test container
+docker run --name eoms-sql-test -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=TestOnly_StrongPass123!" -p 14339:1433 -d mcr.microsoft.com/mssql/server:2022-latest
+
+:: 4. Check running and stopped containers
+docker ps -a
+
+:: 5. Check SQL Server container logs
+docker logs eoms-sql-test
+
+:: 6. Monitor Docker events from the last five minutes
+docker events --since 5m
+
+:: 7. Run only the Unit of Work tests
+dotnet test --filter "FullyQualifiedName~UnitOfWorkTests"
+
+:: 8. Run Unit of Work tests for the Infrastructure test project with detailed logging
+dotnet test tests\EnterpriseOrderManagementSystem.Infrastructure.Tests\EnterpriseOrderManagementSystem.Infrastructure.Tests.csproj --filter "FullyQualifiedName~UnitOfWorkTests" --logger "console;verbosity=detailed"
+
+:: 9. Run the complete Infrastructure test suite
+dotnet test tests\EnterpriseOrderManagementSystem.Infrastructure.Tests\EnterpriseOrderManagementSystem.Infrastructure.Tests.csproj

@@ -1,0 +1,41 @@
+# Check installed EF Core CLI version
+dotnet ef --version
+
+# Update EF Core CLI to version 10.0.12
+dotnet tool update --global dotnet-ef --version 10.0.12
+
+# Build the solution/project
+dotnet build
+
+# Create a new InitialCreate migration
+dotnet ef migrations add InitialCreate --project . --startup-project ..\EnterpriseOrderManagementSystem.Api
+
+# List all migrations and show their status
+dotnet ef migrations list --project . --startup-project ..\EnterpriseOrderManagementSystem.Api
+
+# Apply pending migrations to the database
+dotnet ef database update --project . --startup-project ..\EnterpriseOrderManagementSystem.Api
+
+# Remove the latest migration
+dotnet ef migrations remove --project . --startup-project ..\EnterpriseOrderManagementSystem.Api
+
+# Re-create the InitialCreate migration after model changes
+dotnet ef migrations add InitialCreate --project . --startup-project ..\EnterpriseOrderManagementSystem.Api
+
+# Verify migrations and check for pending migrations
+dotnet ef migrations list --project . --startup-project ..\EnterpriseOrderManagementSystem.Api
+
+# Apply the latest migration to the database
+dotnet ef database update --project . --startup-project ..\EnterpriseOrderManagementSystem.Api
+
+# Generate a SQL script for the migrations
+dotnet ef migrations script --project . --startup-project ..\EnterpriseOrderManagementSystem.Api
+
+# Generate an idempotent SQL migration script for deployment
+dotnet ef migrations script --idempotent --project . --startup-project ..\EnterpriseOrderManagementSystem.Api
+
+# Display information about the application's DbContext
+dotnet ef dbcontext info --project . --startup-project ..\EnterpriseOrderManagementSystem.Api
+
+# List all DbContexts discovered by EF Core
+dotnet ef dbcontext list --project . --startup-project ..\EnterpriseOrderManagementSystem.Api

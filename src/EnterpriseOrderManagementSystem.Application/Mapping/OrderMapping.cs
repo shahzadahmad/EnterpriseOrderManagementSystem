@@ -16,9 +16,11 @@ public static class OrderMapping
         return new OrderDto(
             order.Id,
             order.CustomerId,
-            order.Status,
+            order.OrderNumber,
+            order.Status,            
             order.TotalAmount.Amount,
             order.TotalAmount.Currency,
+            order.CreatedOnUtc,
             items);
     }
 

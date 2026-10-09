@@ -1,6 +1,6 @@
 using EnterpriseOrderManagementSystem.Application.Abstractions.Services;
 using EnterpriseOrderManagementSystem.Application.Common.Exceptions;
-using EnterpriseOrderManagementSystem.Application.EventHandlers.Customers;
+using EnterpriseOrderManagementSystem.Application.Features.Customers.EventHandlers;
 using EnterpriseOrderManagementSystem.Application.Tests.Common;
 using EnterpriseOrderManagementSystem.Domain.Aggregates.CustomerAggregate.Events;
 using EnterpriseOrderManagementSystem.Domain.Repositories;

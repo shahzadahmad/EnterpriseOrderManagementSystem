@@ -1,6 +1,6 @@
 using EnterpriseOrderManagementSystem.Application.Abstractions.Services;
 using EnterpriseOrderManagementSystem.Application.Common.Exceptions;
-using EnterpriseOrderManagementSystem.Application.EventHandlers.Payments;
+using EnterpriseOrderManagementSystem.Application.Features.Payments.EventHandlers;
 using EnterpriseOrderManagementSystem.Application.Tests.Common;
 using EnterpriseOrderManagementSystem.Domain.Aggregates.OrderAggregate;
 using EnterpriseOrderManagementSystem.Domain.Aggregates.PaymentAggregate;

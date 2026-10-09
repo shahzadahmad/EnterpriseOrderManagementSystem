@@ -20,7 +20,7 @@ namespace EnterpriseOrderManagementSystem.Domain.Aggregates.OrderAggregate;
 /// - Raise domain events
 /// - Protect business invariants
 /// </summary>
-public sealed class Order : AggregateRoot<Guid>
+public sealed class Order : AuditableEntity<Guid>
 {
     /// <summary>
     /// Backing collection for order items.
@@ -43,6 +43,8 @@ public sealed class Order : AggregateRoot<Guid>
 
         CustomerId = customerId;
 
+        OrderNumber = GenerateOrderNumber();
+
         Status = OrderStatus.Pending;
 
         TotalAmount = Money.Zero("USD");
@@ -56,6 +58,11 @@ public sealed class Order : AggregateRoot<Guid>
     /// Customer that owns this order.
     /// </summary>
     public Guid CustomerId { get; private set; }
+
+    /// <summary>
+    /// Current Order Number
+    /// </summary>
+    public string OrderNumber { get; private set; } = null!;
 
     /// <summary>
     /// Current order status.
@@ -313,6 +320,16 @@ public sealed class Order : AggregateRoot<Guid>
                 Status.ToString(),
                 action);
         }
+    }
+
+    /// <summary>
+    /// Generate order number for new order.
+    /// </summary>
+    /// <returns></returns>
+    private static string GenerateOrderNumber()
+    {
+        return $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid():N}"
+            .ToUpperInvariant();
     }
 
     #endregion

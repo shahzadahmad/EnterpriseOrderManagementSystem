@@ -1,6 +1,6 @@
 using EnterpriseOrderManagementSystem.Application.Common.Interfaces;
-using EnterpriseOrderManagementSystem.Application.DependencyInjection;
 using EnterpriseOrderManagementSystem.Domain.Common.Events;
+using EnterpriseOrderManagementSystem.Infrastructure.Services.DomainEvents;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace EnterpriseOrderManagementSystem.Application.Tests.EventHandlers;

@@ -1,0 +1,17 @@
+$folders = @(
+    "Persistence\Context",
+    "Persistence\Configurations",
+    "Persistence\Repositories",
+    "Persistence\Transactions",
+    "Persistence\Migrations",
+    "Services\CurrentUser",
+    "Services\DateTime",
+    "Services\Email",
+    "Services\Payment",
+    "DependencyInjection"
+)
+
+foreach ($folder in $folders) {
+    New-Item -ItemType Directory -Force `
+        -Path "EnterpriseOrderManagementSystem.Infrastructure\$folder" | Out-Null
+}

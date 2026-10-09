@@ -1,6 +1,6 @@
 using EnterpriseOrderManagementSystem.Application.Abstractions.Services;
 using EnterpriseOrderManagementSystem.Application.Common.Exceptions;
-using EnterpriseOrderManagementSystem.Application.EventHandlers.Orders;
+using EnterpriseOrderManagementSystem.Application.Features.Orders.EventHandlers;
 using EnterpriseOrderManagementSystem.Application.Tests.Common;
 using EnterpriseOrderManagementSystem.Domain.Aggregates.OrderAggregate;
 using EnterpriseOrderManagementSystem.Domain.Aggregates.OrderAggregate.Events;

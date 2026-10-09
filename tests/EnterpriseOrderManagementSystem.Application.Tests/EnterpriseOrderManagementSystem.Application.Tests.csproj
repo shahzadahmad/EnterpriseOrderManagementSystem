@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\EnterpriseOrderManagementSystem.Application\EnterpriseOrderManagementSystem.Application.csproj" />
+    <ProjectReference Include="..\..\src\EnterpriseOrderManagementSystem.Infrastructure\EnterpriseOrderManagementSystem.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
