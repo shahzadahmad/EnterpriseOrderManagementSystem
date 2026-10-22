@@ -12,12 +12,21 @@ public sealed class CustomerRegisteredDomainEventHandler : IDomainEventHandler<C
 {
     private readonly ICustomerRepository _customers;
     private readonly IEmailService _emailService;
-    public CustomerRegisteredDomainEventHandler(ICustomerRepository customers, IEmailService emailService) { _customers = customers; _emailService = emailService; }
-    public async Task HandleAsync(CustomerRegisteredDomainEvent domainEvent, CancellationToken cancellationToken = default)
+    public CustomerRegisteredDomainEventHandler(ICustomerRepository customers, 
+                                        IEmailService emailService) 
+    { 
+        _customers = customers; 
+        _emailService = emailService; 
+    }
+    public async Task HandleAsync(CustomerRegisteredDomainEvent domainEvent, 
+                                        CancellationToken cancellationToken = default)
     {
         var customer = await _customers.GetByIdAsync(domainEvent.CustomerId, cancellationToken)
-            ?? throw new NotFoundException(nameof(Customer), domainEvent.CustomerId);
+                                            ?? throw new NotFoundException(nameof(Customer), domainEvent.CustomerId);
 
-        await _emailService.SendAsync(customer.Email.ToString(), "Welcome to Enterprise Order Management", $"Hello {customer.FirstName} {customer.LastName}, your customer account has been registered successfully.", cancellationToken);
+        await _emailService.SendAsync(customer.Email.ToString(), 
+                                      "Welcome to Enterprise Order Management", 
+                                      $"Hello {customer.FirstName} {customer.LastName}, your customer account has been registered successfully.", 
+                                      cancellationToken);
     }
 }

@@ -1,5 +1,6 @@
-﻿using EnterpriseOrderManagementSystem.Application.Common.Interfaces;
-using EnterpriseOrderManagementSystem.Domain.Repositories;
+﻿using EnterpriseOrderManagementSystem.Application.Abstractions.Persistence;
+using EnterpriseOrderManagementSystem.Application.Common.Interfaces;
+using EnterpriseOrderManagementSystem.Domain.Common.Events;
 using MediatR;
 
 namespace EnterpriseOrderManagementSystem.Application.Behaviors;
@@ -12,8 +13,10 @@ namespace EnterpriseOrderManagementSystem.Application.Behaviors;
 /// 1. Begin transaction
 /// 2. Execute the command handler
 /// 3. Persist changes
-/// 4. Commit transaction
-/// 5. Roll back if any operation fails
+/// 4. Capture pending domain events
+/// 5. Commit transaction
+/// 6. Clear dispatched events and dispatch after commit
+/// 7. Roll back if persistence fails
 ///
 /// This behavior applies only to commands because commands
 /// are responsible for changing application state.
@@ -23,11 +26,14 @@ public sealed class TransactionBehavior<TRequest, TResponse>
     where TRequest : ICommand<TResponse>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IDomainEventDispatcher _domainEventDispatcher;
 
     public TransactionBehavior(
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IDomainEventDispatcher domainEventDispatcher)
     {
         _unitOfWork = unitOfWork;
+        _domainEventDispatcher = domainEventDispatcher;
     }
 
     public async Task<TResponse> Handle(
@@ -41,33 +47,41 @@ public sealed class TransactionBehavior<TRequest, TResponse>
         await _unitOfWork.BeginTransactionAsync(
             cancellationToken);
 
+        TResponse response;
+        IReadOnlyCollection<IDomainEvent> domainEvents;
+
         try
         {
-            // Execute the actual command handler.
-            var response = await next(cancellationToken);
+            // Execute the command and persist its aggregate changes.
+            response = await next(cancellationToken);
 
-            // Persist all tracked entity changes to the database.
-            // This is intentionally done before committing the transaction.
-            await _unitOfWork.SaveChangesAsync(
-                cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // Commit only after the handler has completed successfully
-            // and all changes have been saved.
-            await _unitOfWork.CommitTransactionAsync(
-                cancellationToken);
+            // Snapshot events while the aggregates are still tracked.
+            domainEvents = _unitOfWork.GetDomainEvents();
 
-            return response;
+            // Events are dispatched only after the database transaction commits.
+            await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+            // Clear only after a successful commit so failed persistence does not
+            // silently discard events from tracked aggregates.
+            _unitOfWork.ClearDomainEvents();
         }
         catch
         {
-            // If the handler, SaveChanges, or Commit operation fails,
-            // roll back the transaction so partial changes are not persisted.
-            await _unitOfWork.RollbackTransactionAsync(
-                cancellationToken);
-
-            // Preserve the original exception and allow the
-            // application's exception-handling pipeline to process it.
+            // Persistence failures must roll back. A post-commit dispatch failure
+            // occurs outside this block and cannot undo an already committed DB transaction.
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
             throw;
         }
+
+        if (domainEvents.Count > 0)
+        {
+            await _domainEventDispatcher.DispatchAsync(
+                domainEvents,
+                cancellationToken);
+        }
+
+        return response;
     }
 }

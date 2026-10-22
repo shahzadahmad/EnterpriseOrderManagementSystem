@@ -106,9 +106,7 @@ public static class DependencyInjection
         services.Configure<EmailOptions>(
             configuration.GetSection("Email"));
 
-        services.AddScoped<
-            IEmailService,
-            SmtpEmailService>();
+        services.AddTransient<IEmailService, SmtpEmailService>();
 
         #endregion
 

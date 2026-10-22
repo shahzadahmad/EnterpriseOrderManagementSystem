@@ -8,15 +8,12 @@ namespace EnterpriseOrderManagementSystem.Application.Features.Customers.Command
 public sealed class CreateCustomerCommandHandler
     : IRequestHandler<CreateCustomerCommand, Guid>
 {
-    private readonly ICustomerRepository _customerRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly ICustomerRepository _customerRepository;    
 
     public CreateCustomerCommandHandler(
-        ICustomerRepository customerRepository,
-        IUnitOfWork unitOfWork)
+        ICustomerRepository customerRepository)
     {
-        _customerRepository = customerRepository;
-        _unitOfWork = unitOfWork;
+        _customerRepository = customerRepository;        
     }
 
     public async Task<Guid> Handle(
@@ -41,7 +38,7 @@ public sealed class CreateCustomerCommandHandler
             request.LastName,
             email,
             phoneNumber,
-            address);
+            address);   
 
         await _customerRepository.AddAsync(
             customer,

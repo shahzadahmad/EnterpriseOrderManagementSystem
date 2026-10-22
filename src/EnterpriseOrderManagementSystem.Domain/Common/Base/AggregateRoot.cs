@@ -1,4 +1,5 @@
 ﻿using EnterpriseOrderManagementSystem.Domain.Common.Events;
+// Add the using for IHasDomainEvents if it is in another namespace.
 
 namespace EnterpriseOrderManagementSystem.Domain.Common.Base;
 
@@ -11,7 +12,8 @@ namespace EnterpriseOrderManagementSystem.Domain.Common.Base;
 /// <typeparam name="TKey">
 /// Type of the aggregate identifier.
 /// </typeparam>
-public abstract class AggregateRoot<TKey> : Entity<TKey>
+public abstract class AggregateRoot<TKey>
+    : Entity<TKey>, IHasDomainEvents
     where TKey : notnull
 {
     private readonly List<IDomainEvent> _domainEvents = [];
@@ -25,9 +27,6 @@ public abstract class AggregateRoot<TKey> : Entity<TKey>
     /// <summary>
     /// Adds a domain event.
     /// </summary>
-    /// <param name="domainEvent">
-    /// Event to add.
-    /// </param>
     protected void AddDomainEvent(IDomainEvent domainEvent)
     {
         ArgumentNullException.ThrowIfNull(domainEvent);

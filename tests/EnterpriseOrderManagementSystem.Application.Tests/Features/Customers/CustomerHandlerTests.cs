@@ -14,14 +14,13 @@ public sealed class CustomerHandlerTests
     [Fact]
     public async Task CreateCustomer_ShouldCreateAndPersistCustomer()
     {
-        var repository = new Mock<ICustomerRepository>();
-        var unitOfWork = new Mock<IUnitOfWork>();
+        var repository = new Mock<ICustomerRepository>();        
         Customer? added = null;
         repository.Setup(x => x.AddAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()))
             .Callback<Customer, CancellationToken>((c, _) => added = c)
             .Returns(Task.CompletedTask);
 
-        var handler = new CreateCustomerCommandHandler(repository.Object, unitOfWork.Object);
+        var handler = new CreateCustomerCommandHandler(repository.Object);
         var result = await handler.Handle(new CreateCustomerCommand(
             " John ", " Doe ", "john@example.com", "+92", "3001234567",
             "Street", "Islamabad", "ICT", "Pakistan", "44000"), CancellationToken.None);

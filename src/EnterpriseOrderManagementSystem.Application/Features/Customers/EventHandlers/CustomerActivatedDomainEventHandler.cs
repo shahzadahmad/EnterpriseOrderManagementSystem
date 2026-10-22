@@ -24,8 +24,8 @@ public sealed class CustomerActivatedDomainEventHandler : IDomainEventHandler<Cu
                                 throw new NotFoundException(nameof(Customer), domainEvent.CustomerId);
 
         await _emailService.SendAsync(customer.Email.ToString(), 
-                                        "Customer account activated", 
-                                            $"Hello {customer.FirstName}, your customer account is now activdomainEvent.", 
+                                        "Customer account activated",
+                                            $"Hello {customer.FirstName}, your customer account is now active.", 
                                                 cancellationToken);
     }
 }

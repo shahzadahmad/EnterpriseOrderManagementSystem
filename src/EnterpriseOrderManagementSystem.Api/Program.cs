@@ -5,17 +5,43 @@ using EnterpriseOrderManagementSystem.Infrastructure.Persistence.Seeding;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Services
+#region Service Registration
+
 builder.Services.AddControllers();
 
-builder.Services.AddApplication();
+// Swagger / OpenAPI services for interactive API testing.
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.OpenApiInfo
+    {
+        Title = "Enterprise Order Management System API",
+        Version = "v1",
+        Description = "API endpoints for the Enterprise Order Management System."
+    });
+});
 
+
+builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+#endregion
 
 var app = builder.Build();
 
+#region HTTP Request Pipeline
+
+// Enable Swagger UI in Development so endpoints can be tested interactively.
 if (app.Environment.IsDevelopment())
 {
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Enterprise Order Management System API v1");
+        options.RoutePrefix = "swagger";
+    });
+
+
     #region Database Seeding
 
     using var scope =
@@ -30,14 +56,21 @@ if (app.Environment.IsDevelopment())
     #endregion
 }
 
-// Global exception handling
+// Convert downstream exceptions into the API's error response format.
 app.UseGlobalExceptionHandling();
 
 app.UseHttpsRedirection();
 
-app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 
+#endregion
+
 app.Run();
+
+
+// Allows WebApplicationFactory to bootstrap the API in integration tests.
+public partial class Program
+{
+}

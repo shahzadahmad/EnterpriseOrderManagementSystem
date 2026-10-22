@@ -1,4 +1,7 @@
-﻿using EnterpriseOrderManagementSystem.Domain.Repositories;
+﻿using EnterpriseOrderManagementSystem.Application.Abstractions.Persistence;
+using EnterpriseOrderManagementSystem.Domain.Aggregates.CustomerAggregate;
+using EnterpriseOrderManagementSystem.Domain.Common.Base;
+using EnterpriseOrderManagementSystem.Domain.Common.Events;
 using EnterpriseOrderManagementSystem.Infrastructure.Persistence.Context;
 using Microsoft.EntityFrameworkCore.Storage;
 
@@ -91,6 +94,31 @@ public sealed class UnitOfWork : IUnitOfWork
             await _currentTransaction.DisposeAsync();
 
             _currentTransaction = null;
+        }
+    }
+
+    #endregion
+
+    #region Domain Events
+
+    public IReadOnlyCollection<IDomainEvent> GetDomainEvents()
+    {
+        return _context.ChangeTracker
+            .Entries()
+            .Select(entry => entry.Entity)
+            .OfType<IHasDomainEvents>()
+            .SelectMany(aggregate => aggregate.DomainEvents)
+            .ToArray();
+    }
+
+    public void ClearDomainEvents()
+    {
+        foreach (var aggregate in _context.ChangeTracker
+            .Entries()
+            .Select(entry => entry.Entity)
+            .OfType<IHasDomainEvents>())
+        {
+            aggregate.ClearDomainEvents();
         }
     }
 

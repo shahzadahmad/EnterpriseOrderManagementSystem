@@ -1,4 +1,6 @@
-﻿namespace EnterpriseOrderManagementSystem.Domain.Repositories;
+﻿using EnterpriseOrderManagementSystem.Domain.Common.Events;
+
+namespace EnterpriseOrderManagementSystem.Application.Abstractions.Persistence;
 
 /// <summary>
 /// Represents the Unit of Work abstraction for coordinating
@@ -85,6 +87,16 @@ public interface IUnitOfWork
     /// </returns>
     Task<int> SaveChangesAsync(
         CancellationToken cancellationToken = default);
+
+    #endregion
+
+    #region Domain Events
+
+    /// <summary>Returns pending domain events from tracked aggregate roots.</summary>
+    IReadOnlyCollection<IDomainEvent> GetDomainEvents();
+
+    /// <summary>Clears pending domain events from tracked aggregate roots.</summary>
+    void ClearDomainEvents();
 
     #endregion
 }
