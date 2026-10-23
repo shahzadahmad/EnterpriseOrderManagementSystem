@@ -21,6 +21,8 @@ public static class OrderMapping
             order.TotalAmount.Amount,
             order.TotalAmount.Currency,
             order.CreatedOnUtc,
+            order.CancelledOnUtc,
+            order.CancellationReason,
             items);
     }
 

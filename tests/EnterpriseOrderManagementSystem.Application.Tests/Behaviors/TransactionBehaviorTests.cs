@@ -1,6 +1,7 @@
+using EnterpriseOrderManagementSystem.Application.Abstractions.Persistence;
 using EnterpriseOrderManagementSystem.Application.Behaviors;
 using EnterpriseOrderManagementSystem.Application.Common.Interfaces;
-using EnterpriseOrderManagementSystem.Application.Abstractions.Persistence;
+using EnterpriseOrderManagementSystem.Domain.Common.Events;
 using Moq;
 
 namespace EnterpriseOrderManagementSystem.Application.Tests.Behaviors;
@@ -14,6 +15,30 @@ public sealed class TransactionBehaviorTests
 
     private TransactionBehavior<TestCommand, string> CreateBehavior()
     {
+        _uow
+            .Setup(x => x.GetDomainEvents())
+            .Returns(Array.Empty<IDomainEvent>());
+
+        _uow
+            .Setup(x => x.BeginTransactionAsync(
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        _uow
+            .Setup(x => x.SaveChangesAsync(
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        _uow
+            .Setup(x => x.CommitTransactionAsync(
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        _uow
+            .Setup(x => x.RollbackTransactionAsync(
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
         return new TransactionBehavior<TestCommand, string>(
             _uow.Object,
             _domainEventDispatcher.Object);

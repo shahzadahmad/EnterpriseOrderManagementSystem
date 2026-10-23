@@ -48,6 +48,8 @@ public sealed class Order : AuditableEntity<Guid>
         Status = OrderStatus.Pending;
 
         TotalAmount = Money.Zero("USD");
+
+        CreatedOnUtc = DateTime.UtcNow;        
     }
 
     #endregion
@@ -73,6 +75,16 @@ public sealed class Order : AuditableEntity<Guid>
     /// Total amount of the order.
     /// </summary>
     public Money TotalAmount { get; private set; }
+
+    /// <summary>
+    /// Reason provided when the order was cancelled.
+    /// </summary>
+    public string? CancellationReason { get; private set; }
+
+    /// <summary>
+    /// UTC timestamp when the order was cancelled.
+    /// </summary>
+    public DateTime? CancelledOnUtc { get; private set; }
 
     /// <summary>
     /// Read-only collection of order items.
@@ -217,6 +229,16 @@ public sealed class Order : AuditableEntity<Guid>
     /// </summary>
     public void Cancel(string reason)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(reason);
+
+        reason = reason.Trim();
+
+        if (reason.Length > 500)
+        {
+            throw new BusinessRuleViolationException(
+                "Cancellation reason cannot exceed 500 characters.");
+        }
+
         if (Status is OrderStatus.Shipped
             or OrderStatus.Delivered)
         {
@@ -226,6 +248,8 @@ public sealed class Order : AuditableEntity<Guid>
         }
 
         Status = OrderStatus.Cancelled;
+        CancellationReason = reason;
+        CancelledOnUtc = DateTime.UtcNow;
 
         AddDomainEvent(
             new OrderCancelledDomainEvent(

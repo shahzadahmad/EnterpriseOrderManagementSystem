@@ -46,6 +46,13 @@ public sealed class OrderConfiguration
             .HasColumnName("CreatedOnUtc")
             .IsRequired();
 
+        builder.Property(x => x.CancellationReason)
+            .HasMaxLength(500)
+            .IsRequired(false);
+
+        builder.Property(x => x.CancelledOnUtc)
+            .IsRequired(false);
+
         #endregion
 
         #region Total Amount Value Object

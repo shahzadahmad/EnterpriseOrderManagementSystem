@@ -135,6 +135,13 @@ namespace EnterpriseOrderManagementSystem.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("CancelledOnUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");
 

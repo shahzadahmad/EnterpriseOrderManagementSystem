@@ -10,4 +10,6 @@ public sealed record OrderDto(
     decimal TotalAmount,
     string Currency,
     DateTime CreatedOnUtc,
+    DateTime? CancelledOnUtc,
+    string? CancellationReason,
     IReadOnlyCollection<OrderItemDto> Items);
