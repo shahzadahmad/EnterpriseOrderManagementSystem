@@ -4,6 +4,7 @@ using EnterpriseOrderManagementSystem.Infrastructure.Persistence.Repositories;
 using EnterpriseOrderManagementSystem.Infrastructure.Persistence.Transactions;
 using EnterpriseOrderManagementSystem.Infrastructure.Tests.Database;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EnterpriseOrderManagementSystem.Infrastructure.Tests.Transactions;
 
@@ -31,8 +32,9 @@ public sealed class UnitOfWorkTests
         await using var context =
             _fixture.CreateDbContext();
 
-        var unitOfWork =
-            new UnitOfWork(context);
+        var unitOfWork = new UnitOfWork(
+            context,
+            NullLogger<UnitOfWork>.Instance);
 
         var repository =
             new ProductRepository(context);
@@ -79,8 +81,9 @@ public sealed class UnitOfWorkTests
         await using var context =
             _fixture.CreateDbContext();
 
-        var unitOfWork =
-            new UnitOfWork(context);
+        var unitOfWork = new UnitOfWork(
+            context,
+            NullLogger<UnitOfWork>.Instance);
 
         var repository =
             new ProductRepository(context);
@@ -120,5 +123,4 @@ public sealed class UnitOfWorkTests
     }
 
     #endregion
-
 }

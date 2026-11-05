@@ -15,12 +15,18 @@ public sealed class PersistenceApiCollection
 [Collection("Persistence API")]
 public sealed class PersistenceApiTests
 {
+    #region Test Setup
+
     private readonly HttpClient _client;
 
     public PersistenceApiTests(PersistenceApiTestFixture fixture)
     {
         _client = fixture.Client;
     }
+
+    #endregion
+
+    #region Customer Persistence Tests
 
     [Fact]
     public async Task Customer_CreateAndRetrieve_ShouldPersistInDatabase()
@@ -135,6 +141,10 @@ public sealed class PersistenceApiTests
         Assert.NotEqual(inactiveStatus, activeStatus);
     }
 
+    #endregion
+
+    #region Product Persistence Tests
+
     [Fact]
     public async Task Product_CreateAndRetrieve_ShouldPersistInDatabase()
     {
@@ -236,6 +246,10 @@ public sealed class PersistenceApiTests
             "Updated description",
             product.GetProperty("description").GetString());
     }
+
+    #endregion
+
+    #region Order Persistence Tests
 
     [Fact]
     public async Task Order_CreateAndRetrieve_ShouldPersistInDatabase()
@@ -581,4 +595,271 @@ public sealed class PersistenceApiTests
             deliveredOrder.GetProperty("items").EnumerateArray());
     }
 
+    #endregion
+
+    #region Inventory Persistence Tests
+
+    [Fact]
+    public async Task Inventory_CreateAndRetrieve_ShouldPersistInDatabase()
+    {
+        // Arrange
+        var productId = Guid.NewGuid();
+        var warehouseId = Guid.NewGuid();
+
+        var request = new
+        {
+            ProductId = productId,
+            WarehouseId = warehouseId,
+            ReorderLevel = 10,
+            MaximumQuantity = 500
+        };
+
+        // Act: Create inventory through the real API.
+        var createResponse = await _client.PostAsJsonAsync(
+            "/api/Inventories",
+            request);
+
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+
+        using var createJson = JsonDocument.Parse(
+            await createResponse.Content.ReadAsStringAsync());
+
+        var inventoryId = createJson.RootElement
+            .GetProperty("id")
+            .GetGuid();
+
+        Assert.NotEqual(Guid.Empty, inventoryId);
+
+        // Act: Retrieve from the database through the API.
+        var getResponse = await _client.GetAsync(
+            $"/api/Inventories/{inventoryId}");
+
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+
+        using var getJson = JsonDocument.Parse(
+            await getResponse.Content.ReadAsStringAsync());
+
+        var inventory = getJson.RootElement;
+
+        // Assert persisted values.
+        Assert.Equal(
+            inventoryId,
+            inventory.GetProperty("id").GetGuid());
+
+        Assert.Equal(
+            productId,
+            inventory.GetProperty("productId").GetGuid());
+
+        Assert.Equal(
+            warehouseId,
+            inventory.GetProperty("warehouseId").GetGuid());
+
+        Assert.Equal(
+            10,
+            inventory.GetProperty("reorderLevel").GetInt32());
+
+        Assert.Equal(
+            500,
+            inventory.GetProperty("maximumQuantity").GetInt32());
+
+        Assert.Equal(
+            0,
+            inventory.GetProperty("availableQuantity").GetInt32());
+
+        Assert.Equal(
+            0,
+            inventory.GetProperty("reservedQuantity").GetInt32());
+
+    }
+
+    [Fact]
+    public async Task Inventory_StockMovements_ShouldPersistAcrossRequests()
+    {
+        // Arrange: Create inventory.
+        var inventoryId = await CreateInventoryAsync();
+
+        // Act 1: Receive 100 units.
+        var receiveResponse = await _client.PostAsJsonAsync(
+            $"/api/Inventories/{inventoryId}/receive",
+            new
+            {
+                Quantity = 100,
+                Reference = "PO-1001",
+                Reason = "Initial stock receipt"
+            });
+
+        await AssertApiSuccessAsync(
+                receiveResponse,
+                "Receive Stock");
+
+        Assert.Equal(HttpStatusCode.OK, receiveResponse.StatusCode);
+
+        // Act 2: Reserve 30 units.
+        var reserveResponse = await _client.PostAsJsonAsync(
+            $"/api/Inventories/{inventoryId}/reserve",
+            new
+            {
+                Quantity = 30,
+                Reference = "ORD-1001",
+                Reason = "Customer order"
+            });
+
+        await AssertApiSuccessAsync(
+                reserveResponse,
+                "Reserve Stock");
+
+        Assert.Equal(HttpStatusCode.OK, reserveResponse.StatusCode);
+
+        // Act 3: Release 10 reserved units.
+        var releaseResponse = await _client.PostAsJsonAsync(
+            $"/api/Inventories/{inventoryId}/release",
+            new
+            {
+                Quantity = 10,
+                Reference = "ORD-1001",
+                Reason = "Order quantity reduced"
+            });
+
+        Assert.Equal(HttpStatusCode.OK, releaseResponse.StatusCode);
+
+        // Act 4: Commit 5 reserved units.
+        var commitResponse = await _client.PostAsJsonAsync(
+            $"/api/Inventories/{inventoryId}/commit",
+            new
+            {
+                Quantity = 5,
+                Reference = "ORD-1001",
+                Reason = "Order shipped"
+            });
+
+        Assert.Equal(HttpStatusCode.OK, commitResponse.StatusCode);
+
+        // Act 5: Adjust available stock to 75.
+        var adjustResponse = await _client.PatchAsJsonAsync(
+            $"/api/Inventories/{inventoryId}/adjust",
+            new
+            {
+                NewAvailableQuantity = 75,
+                Reference = "AUDIT-001",
+                Reason = "Physical stock audit"
+            });
+
+        Assert.Equal(HttpStatusCode.OK, adjustResponse.StatusCode);
+
+        // Retrieve again using a separate HTTP request.
+        var getResponse = await _client.GetAsync(
+            $"/api/Inventories/{inventoryId}");
+
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+
+        using var getJson = JsonDocument.Parse(
+            await getResponse.Content.ReadAsStringAsync());
+
+        var inventory = getJson.RootElement;
+
+        // Assert persisted stock quantities.
+        Assert.Equal(
+            75,
+            inventory.GetProperty("availableQuantity").GetInt32());
+
+        Assert.Equal(
+            15,
+            inventory.GetProperty("reservedQuantity").GetInt32());
+
+        Assert.Equal(
+            90,
+            inventory.GetProperty("totalQuantity").GetInt32());
+
+        // Assert transaction history was persisted.
+        var transactions = inventory.GetProperty("transactions");
+
+        Assert.Equal(5, transactions.GetArrayLength());
+    }
+
+    [Fact]
+    public async Task Inventory_StatusTransitions_ShouldPersistAcrossRequests()
+    {
+        // Arrange
+        var inventoryId = await CreateInventoryAsync();
+
+        // Act: Discontinue inventory.
+        var discontinueResponse = await _client.PatchAsJsonAsync(
+            $"/api/Inventories/{inventoryId}/discontinue",
+            new
+            {
+                Reason = "Product discontinued by manufacturer"
+            });
+
+        Assert.Equal(HttpStatusCode.OK, discontinueResponse.StatusCode);
+
+        // Retrieve discontinued inventory.
+        var discontinuedInventory =
+            await _client.GetFromJsonAsync<JsonElement>(
+                $"/api/Inventories/{inventoryId}");
+
+        Assert.True(
+            discontinuedInventory.GetProperty("isDiscontinued").GetBoolean());
+
+        // Act: Reactivate inventory.
+        var reactivateResponse = await _client.PatchAsync(
+            $"/api/Inventories/{inventoryId}/reactivate",
+            null);
+
+        Assert.Equal(HttpStatusCode.OK, reactivateResponse.StatusCode);
+
+        // Retrieve reactivated inventory.
+        var reactivatedInventory =
+            await _client.GetFromJsonAsync<JsonElement>(
+                $"/api/Inventories/{inventoryId}");
+
+        Assert.False(
+            reactivatedInventory.GetProperty("isDiscontinued").GetBoolean());
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    private async Task<Guid> CreateInventoryAsync()
+    {
+        var request = new
+        {
+            ProductId = Guid.NewGuid(),
+            WarehouseId = Guid.NewGuid(),
+            ReorderLevel = 10,
+            MaximumQuantity = 500
+        };
+
+        var response = await _client.PostAsJsonAsync(
+            "/api/Inventories",
+            request);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        using var json = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
+
+        return json.RootElement
+            .GetProperty("id")
+            .GetGuid();
+    }
+
+    private static async Task AssertApiSuccessAsync(
+    HttpResponseMessage response,
+    string operation)
+    {
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        Assert.True(
+            response.IsSuccessStatusCode,
+            $"""
+        Operation: {operation}
+        Status Code: {(int)response.StatusCode}
+        Reason: {response.ReasonPhrase}
+        Response Body:
+        {responseBody}
+        """);
+    }
+
+    #endregion
 }

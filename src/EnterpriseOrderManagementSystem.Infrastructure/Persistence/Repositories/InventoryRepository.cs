@@ -18,15 +18,45 @@ public sealed class InventoryRepository
 
     #region Get By Id
 
+    //public async Task<Inventory?> GetByIdAsync(
+    //    Guid id,
+    //    CancellationToken cancellationToken = default)
+    //{
+    //    return await _context.Inventories
+    //        .Include(x => x.Transactions)
+    //        .FirstOrDefaultAsync(
+    //            x => x.Id == id,
+    //            cancellationToken);
+    //}
+
     public async Task<Inventory?> GetByIdAsync(
-        Guid id,
-        CancellationToken cancellationToken = default)
+    Guid id,
+    CancellationToken cancellationToken = default)
     {
-        return await _context.Inventories
+        var databaseName = _context.Database.GetDbConnection().Database;
+
+        var connectionString = _context.Database
+            .GetDbConnection()
+            .DataSource;
+
+        var inventoryCount = await _context.Inventories
+            .CountAsync(cancellationToken);
+
+        var inventory = await _context.Inventories
             .Include(x => x.Transactions)
             .FirstOrDefaultAsync(
                 x => x.Id == id,
                 cancellationToken);
+
+        Console.WriteLine("========== INVENTORY DEBUG ==========");
+        Console.WriteLine($"Requested ID: {id}");
+        Console.WriteLine($"Database: {databaseName}");
+        Console.WriteLine($"Data Source: {connectionString}");
+        Console.WriteLine($"Total Inventories: {inventoryCount}");
+        Console.WriteLine($"Inventory Found: {inventory != null}");
+        Console.WriteLine("======================================");
+
+        return inventory;
     }
 
     #endregion

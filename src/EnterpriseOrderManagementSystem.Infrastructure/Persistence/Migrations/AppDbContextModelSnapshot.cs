@@ -88,7 +88,6 @@ namespace EnterpriseOrderManagementSystem.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("EnterpriseOrderManagementSystem.Domain.Aggregates.InventoryAggregate.InventoryTransaction", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("AvailableQuantityAfter")
@@ -111,11 +110,13 @@ namespace EnterpriseOrderManagementSystem.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Reason")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("Reference")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<int>("ReservedQuantityAfter")
                         .HasColumnType("int");
@@ -127,7 +128,7 @@ namespace EnterpriseOrderManagementSystem.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("InventoryId");
 
-                    b.ToTable("InventoryTransaction");
+                    b.ToTable("InventoryTransaction", (string)null);
                 });
 
             modelBuilder.Entity("EnterpriseOrderManagementSystem.Domain.Aggregates.OrderAggregate.Order", b =>

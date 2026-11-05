@@ -1,0 +1,14 @@
+Generate Migration and Update the Database 
+
+</> powershell
+===============================================
+
+
+dotnet ef migrations add ConfigureInventoryTransaction `
+    --project src/EnterpriseOrderManagementSystem.Infrastructure `
+    --startup-project src/EnterpriseOrderManagementSystem.Api
+
+
+dotnet ef database update `
+  --project src/EnterpriseOrderManagementSystem.Infrastructure `
+  --startup-project src/EnterpriseOrderManagementSystem.Api

@@ -1,5 +1,4 @@
-﻿
-using EnterpriseOrderManagementSystem.Application.Abstractions.Services;
+﻿using EnterpriseOrderManagementSystem.Application.Abstractions.Services;
 using EnterpriseOrderManagementSystem.Infrastructure.Persistence.Context;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -8,7 +7,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Testcontainers.MsSql;
+using Microsoft.Data.SqlClient;
 
 namespace EnterpriseOrderManagementSystem.Api.Tests;
 
@@ -26,7 +27,13 @@ public sealed class PersistenceApiTestFixture : IAsyncLifetime
     {
         await _sqlServer.StartAsync();
 
-        var connectionString = _sqlServer.GetConnectionString();
+        var sqlConnectionStringBuilder =
+            new SqlConnectionStringBuilder(_sqlServer.GetConnectionString())
+            {
+                InitialCatalog = "EnterpriseOrderManagementSystem_Test"
+            };
+
+        var connectionString = sqlConnectionStringBuilder.ConnectionString;
 
         _factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
@@ -50,10 +57,17 @@ public sealed class PersistenceApiTestFixture : IAsyncLifetime
                     services.RemoveAll<IEmailService>();
                     services.AddSingleton<IEmailService, NoOpEmailService>();
                 });
+
+                builder.ConfigureLogging(logging =>
+                {
+                    logging.AddConsole();
+                    logging.SetMinimumLevel(LogLevel.Information);
+                });
             });
 
         // Start the application using the test database configuration.
         Client = _factory.CreateClient();
+        Client.Timeout = TimeSpan.FromMinutes(10);
 
         // Apply the real EF Core migrations to the disposable database.
         await using var scope = _factory.Services.CreateAsyncScope();

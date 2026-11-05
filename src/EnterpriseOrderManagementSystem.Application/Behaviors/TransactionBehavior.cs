@@ -44,8 +44,7 @@ public sealed class TransactionBehavior<TRequest, TResponse>
         // Start a transaction before executing the command handler.
         // All database changes made by the handler will be part
         // of the same transaction.
-        await _unitOfWork.BeginTransactionAsync(
-            cancellationToken);
+        await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
         TResponse response;
         IReadOnlyCollection<IDomainEvent> domainEvents;
@@ -71,7 +70,8 @@ public sealed class TransactionBehavior<TRequest, TResponse>
         {
             // Persistence failures must roll back. A post-commit dispatch failure
             // occurs outside this block and cannot undo an already committed DB transaction.
-            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+            await _unitOfWork.RollbackTransactionAsync(CancellationToken.None);
+
             throw;
         }
 
