@@ -98,11 +98,13 @@ public sealed class OrdersControllerTests
         // Arrange
         var orderId = Guid.NewGuid();
         var customerId = Guid.NewGuid();
+        var warehouseId = Guid.NewGuid();
         var createdOnUtc = DateTime.UtcNow;
 
         var order = new OrderDto(
             orderId,
             customerId,
+            warehouseId,
             "ORD-TEST-001",
             OrderStatus.Pending,
             0m,
@@ -144,6 +146,7 @@ public sealed class OrdersControllerTests
         var order1 = new OrderDto(
             Guid.NewGuid(),
             Guid.NewGuid(),
+            Guid.NewGuid(),
             "ORD-TEST-001",
             OrderStatus.Pending,
             100m,
@@ -154,6 +157,7 @@ public sealed class OrdersControllerTests
             Array.Empty<OrderItemDto>());
 
         var order2 = new OrderDto(
+            Guid.NewGuid(),
             Guid.NewGuid(),
             Guid.NewGuid(),
             "ORD-TEST-002",

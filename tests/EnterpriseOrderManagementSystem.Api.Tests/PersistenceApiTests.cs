@@ -251,10 +251,16 @@ public sealed class PersistenceApiTests
 
     #region Order Persistence Tests
 
+    private static readonly Guid TestWarehouseId =
+    Guid.Parse("11111111-1111-1111-1111-111111111111");
+
     [Fact]
     public async Task Order_CreateAndRetrieve_ShouldPersistInDatabase()
     {
-        // Arrange: create a real customer first.
+        // Arrange: create a warehouse.
+        var warehouseId = TestWarehouseId;
+
+        // Arrange: create a customer.
         var customerRequest = new
         {
             FirstName = "Order",
@@ -286,17 +292,17 @@ public sealed class PersistenceApiTests
 
         Assert.NotEqual(Guid.Empty, customerId);
 
-        // Act: create an order for the persisted customer.
+        // Act: create an order using the persisted customer and warehouse.
         var orderRequest = new
         {
-            CustomerId = customerId
+            CustomerId = customerId,
+            WarehouseId = warehouseId
         };
 
         var createResponse = await _client.PostAsJsonAsync(
             "/api/Orders",
             orderRequest);
 
-        // Assert: the API created the order.
         Assert.Equal(
             HttpStatusCode.Created,
             createResponse.StatusCode);
@@ -337,8 +343,7 @@ public sealed class PersistenceApiTests
                 order.GetProperty("orderNumber").GetString()));
 
         Assert.True(
-            order.GetProperty("createdOnUtc").GetDateTime()
-                != default);
+            order.GetProperty("createdOnUtc").GetDateTime() != default);
 
         Assert.Equal(
             0m,
@@ -355,6 +360,9 @@ public sealed class PersistenceApiTests
     [Fact]
     public async Task Order_Cancel_ShouldPersistReasonAndTimestamp()
     {
+        // Arrange: create a warehouse.
+        var warehouseId = TestWarehouseId;
+
         // Arrange: create a customer.
         var customerRequest = new
         {
@@ -385,10 +393,14 @@ public sealed class PersistenceApiTests
             .GetProperty("id")
             .GetGuid();
 
-        // Arrange: create an order for that customer.
+        // Arrange: create an order using the valid warehouse.
         var createOrderResponse = await _client.PostAsJsonAsync(
             "/api/Orders",
-            new { CustomerId = customerId });
+            new
+            {
+                CustomerId = customerId,
+                WarehouseId = warehouseId
+            });
 
         Assert.Equal(
             HttpStatusCode.Created,
@@ -408,20 +420,24 @@ public sealed class PersistenceApiTests
             $"/api/Orders/{orderId}/cancel",
             new { Reason = reason });
 
-        Assert.Equal(HttpStatusCode.OK, cancelResponse.StatusCode);
+        Assert.Equal(
+            HttpStatusCode.OK,
+            cancelResponse.StatusCode);
 
         // Act: retrieve the order in a separate API request.
         var getResponse = await _client.GetAsync(
             $"/api/Orders/{orderId}");
 
-        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+        Assert.Equal(
+            HttpStatusCode.OK,
+            getResponse.StatusCode);
 
         using var retrievedJson = JsonDocument.Parse(
             await getResponse.Content.ReadAsStringAsync());
 
         var order = retrievedJson.RootElement;
 
-        // Assert: cancellation details survived the database round trip.
+        // Assert: verify cancellation details persisted.
         Assert.Equal(
             orderId,
             order.GetProperty("id").GetGuid());
@@ -434,9 +450,9 @@ public sealed class PersistenceApiTests
             reason,
             order.GetProperty("cancellationReason").GetString());
 
-        Assert.True(
-            order.GetProperty("cancelledOnUtc").ValueKind
-                != JsonValueKind.Null);
+        Assert.NotEqual(
+            JsonValueKind.Null,
+            order.GetProperty("cancelledOnUtc").ValueKind);
 
         var cancelledOnUtc = order
             .GetProperty("cancelledOnUtc")
@@ -448,7 +464,10 @@ public sealed class PersistenceApiTests
     [Fact]
     public async Task Order_LifecycleTransitions_ShouldPersistAcrossRequests()
     {
-        // Arrange: create a customer.
+        // Arrange: use the test warehouse.
+        var warehouseId = TestWarehouseId;
+
+        // Arrange: create customer.
         var customerResponse = await _client.PostAsJsonAsync(
             "/api/Customers",
             new
@@ -465,18 +484,15 @@ public sealed class PersistenceApiTests
                 PostalCode = "44000"
             });
 
-        Assert.Equal(
-            HttpStatusCode.Created,
-            customerResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, customerResponse.StatusCode);
 
         using var customerJson = JsonDocument.Parse(
             await customerResponse.Content.ReadAsStringAsync());
 
         var customerId = customerJson.RootElement
-            .GetProperty("id")
-            .GetGuid();
+            .GetProperty("id").GetGuid();
 
-        // Arrange: create an active product.
+        // Arrange: create active product.
         var productResponse = await _client.PostAsJsonAsync(
             "/api/Products",
             new
@@ -488,34 +504,63 @@ public sealed class PersistenceApiTests
                 Currency = "USD"
             });
 
-        Assert.Equal(
-            HttpStatusCode.Created,
-            productResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, productResponse.StatusCode);
 
         using var productJson = JsonDocument.Parse(
             await productResponse.Content.ReadAsStringAsync());
 
         var productId = productJson.RootElement
-            .GetProperty("id")
-            .GetGuid();
+            .GetProperty("id").GetGuid();
 
-        // Arrange: create an order.
+        // Arrange: create inventory.
+        var inventoryResponse = await _client.PostAsJsonAsync(
+            "/api/Inventories",
+            new
+            {
+                ProductId = productId,
+                WarehouseId = warehouseId,
+                ReorderLevel = 5,
+                MaximumQuantity = 100
+            });
+
+        Assert.Equal(HttpStatusCode.Created, inventoryResponse.StatusCode);
+
+        using var inventoryJson = JsonDocument.Parse(
+            await inventoryResponse.Content.ReadAsStringAsync());
+
+        var inventoryId = inventoryJson.RootElement
+            .GetProperty("id").GetGuid();
+
+        // Arrange: receive stock.
+        var receiveStockResponse = await _client.PostAsJsonAsync(
+            $"/api/Inventories/{inventoryId}/receive",
+            new
+            {
+                Quantity = 10,
+                Reference = $"LIFECYCLE-STOCK-{Guid.NewGuid():N}",
+                Reason = "Initial stock for order lifecycle integration test"
+            });
+
+        Assert.Equal(HttpStatusCode.OK, receiveStockResponse.StatusCode);
+
+        // Arrange: create order.
         var createOrderResponse = await _client.PostAsJsonAsync(
             "/api/Orders",
-            new { CustomerId = customerId });
+            new
+            {
+                CustomerId = customerId,
+                WarehouseId = warehouseId
+            });
 
-        Assert.Equal(
-            HttpStatusCode.Created,
-            createOrderResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, createOrderResponse.StatusCode);
 
         using var orderJson = JsonDocument.Parse(
             await createOrderResponse.Content.ReadAsStringAsync());
 
         var orderId = orderJson.RootElement
-            .GetProperty("id")
-            .GetGuid();
+            .GetProperty("id").GetGuid();
 
-        // Arrange: add an item so the order can be confirmed.
+        // Arrange: add order item.
         var addItemResponse = await _client.PostAsJsonAsync(
             $"/api/Orders/{orderId}/items",
             new
@@ -524,18 +569,15 @@ public sealed class PersistenceApiTests
                 Quantity = 2
             });
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            addItemResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, addItemResponse.StatusCode);
 
-        // Act: confirm the order.
+        // Act: confirm order.
+        // This reserves 2 units from inventory.
         var confirmResponse = await _client.PatchAsync(
             $"/api/Orders/{orderId}/confirm",
             content: null);
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            confirmResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, confirmResponse.StatusCode);
 
         // Assert: confirmed status is persisted.
         var confirmedOrder = await _client.GetFromJsonAsync<JsonElement>(
@@ -545,14 +587,71 @@ public sealed class PersistenceApiTests
             (int)OrderStatus.Confirmed,
             confirmedOrder.GetProperty("status").GetInt32());
 
-        // Act: ship the order.
-        var shipResponse = await _client.PatchAsync(
-            $"/api/Orders/{orderId}/ship",
+        // ============================================
+        // PAYMENT LIFECYCLE
+        // ============================================
+
+        // Arrange: create payment for the confirmed order.
+        // 2 units * $125.50 = $251.00
+        var createPaymentResponse = await _client.PostAsJsonAsync(
+            "/api/Payments",
+            new
+            {
+                OrderId = orderId,
+                Amount = 251.00m,
+                Currency = "USD",
+                PaymentMethod = 1,
+                PaymentProvider = 1
+            });
+
+        Assert.Equal(
+            HttpStatusCode.Created,
+            createPaymentResponse.StatusCode);
+
+        using var paymentJson = JsonDocument.Parse(
+            await createPaymentResponse.Content.ReadAsStringAsync());
+
+        var paymentId = paymentJson.RootElement
+            .GetProperty("id").GetGuid();
+
+        // Act: authorize payment.
+        var authorizePaymentResponse = await _client.PostAsync(
+            $"/api/Payments/{paymentId}/authorize",
             content: null);
 
         Assert.Equal(
             HttpStatusCode.OK,
-            shipResponse.StatusCode);
+            authorizePaymentResponse.StatusCode);
+
+        // Act: capture payment.
+        // Payment must be Captured before shipment.
+        var capturePaymentResponse = await _client.PostAsync(
+            $"/api/Payments/{paymentId}/capture",
+            content: null);
+
+        Assert.Equal(
+            HttpStatusCode.OK,
+            capturePaymentResponse.StatusCode);
+
+        // Assert: payment is persisted as Captured.
+        var capturedPayment = await _client.GetFromJsonAsync<JsonElement>(
+            $"/api/Payments/{paymentId}");
+
+        Assert.Equal(
+            (int)PaymentStatus.Captured,
+            capturedPayment.GetProperty("status").GetInt32());
+
+        // ============================================
+        // SHIPPING LIFECYCLE
+        // ============================================
+
+        // Act: ship order.
+        // Handler validates captured payment and commits reservations.
+        var shipResponse = await _client.PatchAsync(
+            $"/api/Orders/{orderId}/ship",
+            content: null);
+
+        Assert.Equal(HttpStatusCode.OK, shipResponse.StatusCode);
 
         // Assert: shipped status is persisted.
         var shippedOrder = await _client.GetFromJsonAsync<JsonElement>(
@@ -562,14 +661,16 @@ public sealed class PersistenceApiTests
             (int)OrderStatus.Shipped,
             shippedOrder.GetProperty("status").GetInt32());
 
-        // Act: deliver the order.
+        // ============================================
+        // DELIVERY LIFECYCLE
+        // ============================================
+
+        // Act: deliver order.
         var deliverResponse = await _client.PatchAsync(
             $"/api/Orders/{orderId}/deliver",
             content: null);
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            deliverResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, deliverResponse.StatusCode);
 
         // Assert: delivered status is persisted.
         var deliveredOrder = await _client.GetFromJsonAsync<JsonElement>(

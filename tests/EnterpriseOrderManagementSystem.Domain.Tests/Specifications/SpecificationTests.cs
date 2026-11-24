@@ -1,4 +1,5 @@
-﻿using EnterpriseOrderManagementSystem.Domain.Aggregates.InventoryAggregate;
+﻿
+using EnterpriseOrderManagementSystem.Domain.Aggregates.InventoryAggregate;
 using EnterpriseOrderManagementSystem.Domain.Aggregates.OrderAggregate;
 using EnterpriseOrderManagementSystem.Domain.Aggregates.PaymentAggregate;
 using EnterpriseOrderManagementSystem.Domain.Common.Exceptions;
@@ -406,12 +407,18 @@ public sealed class InventorySpecificationTests
 
 public sealed class OrderSpecificationTests
 {
+    private static Order CreateOrder()
+    {
+        return Order.Create(
+            customerId: Guid.NewGuid(),
+            warehouseId: Guid.NewGuid());
+    }
+
     [Fact]
     public void ConfirmedOrderSpecification_ShouldReturnFalse_WhenOrderIsPending()
     {
         // Arrange
-        var order =
-            Order.Create(Guid.NewGuid());
+        var order = CreateOrder();
 
         var specification =
             new ConfirmedOrderSpecification();
@@ -428,8 +435,7 @@ public sealed class OrderSpecificationTests
     public void ConfirmedOrderSpecification_ShouldReturnTrue_WhenOrderIsConfirmed()
     {
         // Arrange
-        var order =
-            Order.Create(Guid.NewGuid());
+        var order = CreateOrder();
 
         order.AddItem(
             productId: Guid.NewGuid(),
@@ -466,8 +472,7 @@ public sealed class OrderSpecificationTests
     public void OrderHasItemsSpecification_ShouldReturnFalse_WhenOrderHasNoItems()
     {
         // Arrange
-        var order =
-            Order.Create(Guid.NewGuid());
+        var order = CreateOrder();
 
         var specification =
             new OrderHasItemsSpecification();
@@ -484,8 +489,7 @@ public sealed class OrderSpecificationTests
     public void OrderHasItemsSpecification_ShouldReturnTrue_WhenOrderHasItems()
     {
         // Arrange
-        var order =
-            Order.Create(Guid.NewGuid());
+        var order = CreateOrder();
 
         order.AddItem(
             productId: Guid.NewGuid(),

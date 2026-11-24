@@ -30,6 +30,9 @@ public sealed class OrderConfiguration
         builder.Property(x => x.CustomerId)
             .IsRequired();
 
+        builder.Property(x => x.WarehouseId)
+            .IsRequired();
+
         builder.Property(x => x.OrderNumber)
             .HasColumnName("OrderNumber")
             .HasMaxLength(50)

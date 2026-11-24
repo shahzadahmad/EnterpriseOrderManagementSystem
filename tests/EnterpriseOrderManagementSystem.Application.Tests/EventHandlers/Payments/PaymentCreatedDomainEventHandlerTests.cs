@@ -1,3 +1,4 @@
+
 using EnterpriseOrderManagementSystem.Application.Abstractions.Services;
 using EnterpriseOrderManagementSystem.Application.Common.Exceptions;
 using EnterpriseOrderManagementSystem.Application.Features.Payments.EventHandlers;
@@ -16,32 +17,98 @@ public sealed class PaymentCreatedDomainEventHandlerTests
     [Fact]
     public async Task HandleAsync_WhenOrderAndCustomerExist_SendsEmail()
     {
+        // Arrange
         var customer = TestData.Customer();
-        var order = Order.Create(customer.Id);
-        var payment = Payment.Create(Guid.NewGuid(), order.Id, 100m, "USD", PaymentMethod.CreditCard, PaymentProvider.Stripe);
+        var warehouseId = Guid.NewGuid();
+
+        var order = TestData.Order(
+            customer.Id,
+            warehouseId);
+
+        var payment = Payment.Create(
+            Guid.NewGuid(),
+            order.Id,
+            100m,
+            "USD",
+            PaymentMethod.CreditCard,
+            PaymentProvider.Stripe);
+
         var orders = new Mock<IOrderRepository>();
         var customers = new Mock<ICustomerRepository>();
         var email = new Mock<IEmailService>();
-        orders.Setup(x => x.GetByIdAsync(order.Id, It.IsAny<CancellationToken>())).ReturnsAsync(order);
-        customers.Setup(x => x.GetByIdAsync(customer.Id, It.IsAny<CancellationToken>())).ReturnsAsync(customer);
-        var handler = new PaymentCreatedDomainEventHandler(orders.Object, customers.Object, email.Object);
 
-        await handler.HandleAsync(new PaymentCreatedDomainEvent(payment.Id, order.Id, 100m, "USD"));
+        orders
+            .Setup(x => x.GetByIdAsync(
+                order.Id,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(order);
 
-        email.Verify(x => x.SendAsync(customer.Email.ToString(), "Payment created", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        customers
+            .Setup(x => x.GetByIdAsync(
+                customer.Id,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(customer);
+
+        var handler = new PaymentCreatedDomainEventHandler(
+            orders.Object,
+            customers.Object,
+            email.Object);
+
+        // Act
+        await handler.HandleAsync(
+            new PaymentCreatedDomainEvent(
+                payment.Id,
+                order.Id,
+                100m,
+                "USD"));
+
+        // Assert
+        email.Verify(
+            x => x.SendAsync(
+                customer.Email.ToString(),
+                "Payment created",
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
     public async Task HandleAsync_WhenOrderDoesNotExist_ThrowsNotFoundException()
     {
+        // Arrange
         var orderId = Guid.NewGuid();
+
         var orders = new Mock<IOrderRepository>();
         var customers = new Mock<ICustomerRepository>();
         var email = new Mock<IEmailService>();
-        orders.Setup(x => x.GetByIdAsync(orderId, It.IsAny<CancellationToken>())).ReturnsAsync((Order?)null);
-        var handler = new PaymentCreatedDomainEventHandler(orders.Object, customers.Object, email.Object);
-        var evt = new PaymentCreatedDomainEvent(Guid.NewGuid(), orderId, 100m, "USD" );
-        await Assert.ThrowsAsync<NotFoundException>(() => handler.HandleAsync(evt));
-        email.Verify(x => x.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+
+        orders
+            .Setup(x => x.GetByIdAsync(
+                orderId,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Order?)null);
+
+        var handler = new PaymentCreatedDomainEventHandler(
+            orders.Object,
+            customers.Object,
+            email.Object);
+
+        var evt = new PaymentCreatedDomainEvent(
+            Guid.NewGuid(),
+            orderId,
+            100m,
+            "USD");
+
+        // Act & Assert
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => handler.HandleAsync(evt));
+
+        email.Verify(
+            x => x.SendAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 }

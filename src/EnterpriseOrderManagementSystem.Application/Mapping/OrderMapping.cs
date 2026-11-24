@@ -16,6 +16,7 @@ public static class OrderMapping
         return new OrderDto(
             order.Id,
             order.CustomerId,
+            order.WarehouseId,
             order.OrderNumber,
             order.Status,            
             order.TotalAmount.Amount,

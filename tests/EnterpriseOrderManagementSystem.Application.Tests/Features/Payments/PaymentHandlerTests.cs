@@ -1,3 +1,4 @@
+
 using EnterpriseOrderManagementSystem.Application.Abstractions.Services.PaymentGateway;
 using EnterpriseOrderManagementSystem.Application.Common.Exceptions;
 using EnterpriseOrderManagementSystem.Application.Common.Models;
@@ -15,26 +16,84 @@ namespace EnterpriseOrderManagementSystem.Application.Tests.Features.Payments;
 
 public sealed class PaymentHandlerTests
 {
+
     [Fact]
     public async Task CreatePayment_ShouldCreateAndPersistPayment()
     {
-        var orderId = Guid.NewGuid();
+        // Arrange
+        var order = TestData.ConfirmedOrder();
+
         var payments = new Mock<IPaymentRepository>();
         var orders = new Mock<IOrderRepository>();
-        orders.Setup(x => x.ExistsAsync(orderId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        payments.Setup(x => x.ExistsByOrderIdAsync(orderId, It.IsAny<CancellationToken>())).ReturnsAsync(false);
-        Payment? added = null;
-        payments.Setup(x => x.AddAsync(It.IsAny<Payment>(), It.IsAny<CancellationToken>()))
-            .Callback<Payment, CancellationToken>((p, _) => added = p).Returns(Task.CompletedTask);
 
-        var result = await new CreatePaymentCommandHandler(payments.Object, orders.Object).Handle(
-            new CreatePaymentCommand(orderId, 100m, "USD", PaymentMethod.CreditCard, PaymentProvider.Stripe),
+        // Return an existing confirmed order.
+        orders
+            .Setup(x => x.GetByIdAsync(
+                order.Id,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(order);
+
+        // No existing payment for this order.
+        payments
+            .Setup(x => x.ExistsByOrderIdAsync(
+                order.Id,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        Payment? added = null;
+
+        // Capture the payment passed to the repository.
+        payments
+            .Setup(x => x.AddAsync(
+                It.IsAny<Payment>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<Payment, CancellationToken>(
+                (payment, _) => added = payment)
+            .Returns(Task.CompletedTask);
+
+        var handler = new CreatePaymentCommandHandler(
+            payments.Object,
+            orders.Object);
+
+        var command = new CreatePaymentCommand(
+            order.Id,
+            order.TotalAmount.Amount,
+            order.TotalAmount.Currency,
+            PaymentMethod.CreditCard,
+            PaymentProvider.Stripe);
+
+        // Act
+        var result = await handler.Handle(
+            command,
             CancellationToken.None);
 
+        // Assert
         Assert.NotEqual(Guid.Empty, result);
-        Assert.Equal(result, added!.Id);
-        Assert.Equal(orderId, added.OrderId);
-        Assert.Equal(100m, added.Amount);
+        Assert.NotNull(added);
+
+        Assert.Equal(result, added.Id);
+        Assert.Equal(order.Id, added.OrderId);
+        Assert.Equal(order.TotalAmount.Amount, added.Amount);
+        Assert.Equal(order.TotalAmount.Currency, added.Currency);
+
+        // Verify repository interactions.
+        orders.Verify(
+            x => x.GetByIdAsync(
+                order.Id,
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        payments.Verify(
+            x => x.ExistsByOrderIdAsync(
+                order.Id,
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        payments.Verify(
+            x => x.AddAsync(
+                It.IsAny<Payment>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -43,7 +102,9 @@ public sealed class PaymentHandlerTests
         var orderId = Guid.NewGuid();
         var payments = new Mock<IPaymentRepository>();
         var orders = new Mock<IOrderRepository>();
-        orders.Setup(x => x.ExistsAsync(orderId, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+        orders.Setup(x => x.ExistsAsync(orderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             new CreatePaymentCommandHandler(payments.Object, orders.Object).Handle(
@@ -54,16 +115,49 @@ public sealed class PaymentHandlerTests
     [Fact]
     public async Task CreatePayment_ShouldThrowConflictWhenPaymentAlreadyExists()
     {
-        var orderId = Guid.NewGuid();
+        // Arrange
+        var order = TestData.ConfirmedOrder();
+
         var payments = new Mock<IPaymentRepository>();
         var orders = new Mock<IOrderRepository>();
-        orders.Setup(x => x.ExistsAsync(orderId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        payments.Setup(x => x.ExistsByOrderIdAsync(orderId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
-        await Assert.ThrowsAsync<ConflictException>(() =>
-            new CreatePaymentCommandHandler(payments.Object, orders.Object).Handle(
-                new CreatePaymentCommand(orderId, 100m, "USD", PaymentMethod.CreditCard, PaymentProvider.Stripe),
+        // Return an existing confirmed order.
+        orders
+            .Setup(x => x.GetByIdAsync(
+                order.Id,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(order);
+
+        // Simulate an existing payment.
+        payments
+            .Setup(x => x.ExistsByOrderIdAsync(
+                order.Id,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var handler = new CreatePaymentCommandHandler(
+            payments.Object,
+            orders.Object);
+
+        var command = new CreatePaymentCommand(
+            order.Id,
+            order.TotalAmount.Amount,
+            order.TotalAmount.Currency,
+            PaymentMethod.CreditCard,
+            PaymentProvider.Stripe);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ConflictException>(
+            () => handler.Handle(
+                command,
                 CancellationToken.None));
+
+        // Verify that no new payment was created.
+        payments.Verify(
+            x => x.AddAsync(
+                It.IsAny<Payment>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]
@@ -72,11 +166,16 @@ public sealed class PaymentHandlerTests
         var payment = TestData.Payment();
         var repo = PaymentRepo(payment);
         var gateway = new Mock<IPaymentGateway>();
-        gateway.Setup(x => x.AuthorizeAsync(It.IsAny<PaymentAuthorizationRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new PaymentAuthorizationResult(true, "provider-ref", "auth-code", null, null));
 
-        var result = await new AuthorizePaymentCommandHandler(repo.Object, gateway.Object).Handle(
-            new AuthorizePaymentCommand(payment.Id), CancellationToken.None);
+        gateway.Setup(x => x.AuthorizeAsync(
+                It.IsAny<PaymentAuthorizationRequest>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PaymentAuthorizationResult(
+                true, "provider-ref", "auth-code", null, null));
+
+        var result = await CreateAuthorizeHandler(repo, gateway).Handle(
+            new AuthorizePaymentCommand(payment.Id),
+            CancellationToken.None);
 
         Assert.Equal(payment.Id, result);
         Assert.Equal(PaymentStatus.Authorized, payment.Status);
@@ -90,11 +189,16 @@ public sealed class PaymentHandlerTests
         var payment = TestData.Payment();
         var repo = PaymentRepo(payment);
         var gateway = new Mock<IPaymentGateway>();
-        gateway.Setup(x => x.AuthorizeAsync(It.IsAny<PaymentAuthorizationRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new PaymentAuthorizationResult(false, null, null, "DECLINED", "Declined"));
 
-        var result = await new AuthorizePaymentCommandHandler(repo.Object, gateway.Object).Handle(
-            new AuthorizePaymentCommand(payment.Id), CancellationToken.None);
+        gateway.Setup(x => x.AuthorizeAsync(
+                It.IsAny<PaymentAuthorizationRequest>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PaymentAuthorizationResult(
+                false, null, null, "DECLINED", "Declined"));
+
+        var result = await CreateAuthorizeHandler(repo, gateway).Handle(
+            new AuthorizePaymentCommand(payment.Id),
+            CancellationToken.None);
 
         Assert.Equal(payment.Id, result);
         Assert.Equal(PaymentStatus.Failed, payment.Status);
@@ -107,11 +211,16 @@ public sealed class PaymentHandlerTests
         var payment = TestData.AuthorizedPayment();
         var repo = PaymentRepo(payment);
         var gateway = new Mock<IPaymentGateway>();
-        gateway.Setup(x => x.CaptureAsync(It.IsAny<PaymentCaptureRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new PaymentCaptureResult(true, "capture-provider-ref", null, null));
 
-        var result = await new CapturePaymentCommandHandler(repo.Object, gateway.Object).Handle(
-            new CapturePaymentCommand(payment.Id), CancellationToken.None);
+        gateway.Setup(x => x.CaptureAsync(
+                It.IsAny<PaymentCaptureRequest>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PaymentCaptureResult(
+                true, "capture-provider-ref", null, null));
+
+        var result = await CreateCaptureHandler(repo, gateway).Handle(
+            new CapturePaymentCommand(payment.Id),
+            CancellationToken.None);
 
         Assert.Equal(payment.Id, result);
         Assert.Equal(PaymentStatus.Captured, payment.Status);
@@ -124,11 +233,16 @@ public sealed class PaymentHandlerTests
         var payment = TestData.AuthorizedPayment();
         var repo = PaymentRepo(payment);
         var gateway = new Mock<IPaymentGateway>();
-        gateway.Setup(x => x.CaptureAsync(It.IsAny<PaymentCaptureRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new PaymentCaptureResult(false, null, "CAPTURE_FAILED", "Capture failed"));
 
-        var result = await new CapturePaymentCommandHandler(repo.Object, gateway.Object).Handle(
-            new CapturePaymentCommand(payment.Id), CancellationToken.None);
+        gateway.Setup(x => x.CaptureAsync(
+                It.IsAny<PaymentCaptureRequest>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PaymentCaptureResult(
+                false, null, "CAPTURE_FAILED", "Capture failed"));
+
+        var result = await CreateCaptureHandler(repo, gateway).Handle(
+            new CapturePaymentCommand(payment.Id),
+            CancellationToken.None);
 
         Assert.Equal(payment.Id, result);
         Assert.Equal(PaymentStatus.Failed, payment.Status);
@@ -141,11 +255,16 @@ public sealed class PaymentHandlerTests
         var payment = TestData.CapturedPayment();
         var repo = PaymentRepo(payment);
         var gateway = new Mock<IPaymentGateway>();
-        gateway.Setup(x => x.RefundAsync(It.IsAny<PaymentRefundRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new PaymentRefundResult(true, "refund-ref", null, null));
+
+        gateway.Setup(x => x.RefundAsync(
+                It.IsAny<PaymentRefundRequest>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PaymentRefundResult(
+                true, "refund-ref", null, null));
 
         var result = await new RefundPaymentCommandHandler(repo.Object, gateway.Object).Handle(
-            new RefundPaymentCommand(payment.Id, 25m, "Customer request"), CancellationToken.None);
+            new RefundPaymentCommand(payment.Id, 25m, "Customer request"),
+            CancellationToken.None);
 
         Assert.Equal(payment.Id, result);
         Assert.Equal(25m, payment.TotalRefundedAmount);
@@ -158,12 +277,18 @@ public sealed class PaymentHandlerTests
         var payment = TestData.CapturedPayment();
         var repo = PaymentRepo(payment);
         var gateway = new Mock<IPaymentGateway>();
-        gateway.Setup(x => x.RefundAsync(It.IsAny<PaymentRefundRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new PaymentRefundResult(false, null, "REFUND_FAILED", "Refund declined"));
+
+        gateway.Setup(x => x.RefundAsync(
+                It.IsAny<PaymentRefundRequest>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PaymentRefundResult(
+                false, null, "REFUND_FAILED", "Refund declined"));
 
         await Assert.ThrowsAsync<ConflictException>(() =>
             new RefundPaymentCommandHandler(repo.Object, gateway.Object).Handle(
-                new RefundPaymentCommand(payment.Id, 25m, "Customer request"), CancellationToken.None));
+                new RefundPaymentCommand(payment.Id, 25m, "Customer request"),
+                CancellationToken.None));
+
         Assert.Equal(0m, payment.TotalRefundedAmount);
     }
 
@@ -172,8 +297,11 @@ public sealed class PaymentHandlerTests
     {
         var payment = TestData.Payment();
         var repo = PaymentRepo(payment);
+
         var result = await new CancelPaymentCommandHandler(repo.Object).Handle(
-            new CancelPaymentCommand(payment.Id, "Customer cancelled"), CancellationToken.None);
+            new CancelPaymentCommand(payment.Id, "Customer cancelled"),
+            CancellationToken.None);
+
         Assert.Equal(payment.Id, result);
         Assert.Equal(PaymentStatus.Cancelled, payment.Status);
     }
@@ -183,8 +311,11 @@ public sealed class PaymentHandlerTests
     {
         var payment = TestData.Payment();
         var repo = PaymentRepo(payment);
+
         var result = await new FailPaymentCommandHandler(repo.Object).Handle(
-            new FailPaymentCommand(payment.Id, "DECLINED", "Provider declined"), CancellationToken.None);
+            new FailPaymentCommand(payment.Id, "DECLINED", "Provider declined"),
+            CancellationToken.None);
+
         Assert.Equal(payment.Id, result);
         Assert.Equal(PaymentStatus.Failed, payment.Status);
         Assert.Equal("DECLINED", payment.FailureCode);
@@ -195,8 +326,11 @@ public sealed class PaymentHandlerTests
     {
         var payment = TestData.CapturedPayment();
         var repo = PaymentRepo(payment);
+
         var result = await new SettlePaymentCommandHandler(repo.Object).Handle(
-            new SettlePaymentCommand(payment.Id), CancellationToken.None);
+            new SettlePaymentCommand(payment.Id),
+            CancellationToken.None);
+
         Assert.Equal(payment.Id, result);
         Assert.Equal(PaymentStatus.Settled, payment.Status);
     }
@@ -206,8 +340,11 @@ public sealed class PaymentHandlerTests
     {
         var payment = TestData.CapturedPayment();
         var repo = PaymentRepo(payment);
+
         var result = await new GetPaymentByIdQueryHandler(repo.Object).Handle(
-            new GetPaymentByIdQuery(payment.Id), CancellationToken.None);
+            new GetPaymentByIdQuery(payment.Id),
+            CancellationToken.None);
+
         Assert.NotNull(result);
         Assert.Equal(payment.Id, result!.Id);
         Assert.Equal(payment.Amount, result.Amount);
@@ -219,20 +356,32 @@ public sealed class PaymentHandlerTests
     {
         var id = Guid.NewGuid();
         var repo = PaymentRepo(null);
+
         Assert.Null(await new GetPaymentByIdQueryHandler(repo.Object).Handle(
-            new GetPaymentByIdQuery(id), CancellationToken.None));
+            new GetPaymentByIdQuery(id),
+            CancellationToken.None));
     }
 
     [Fact]
     public async Task GetPayments_ShouldReturnPagedMappedResults()
     {
-        var payments = new[] { TestData.Payment(), TestData.Payment(50m) };
+        var payments = new[]
+        {
+            TestData.Payment(),
+            TestData.Payment(50m)
+        };
+
         var repo = new Mock<IReadRepository<Payment>>();
-        repo.Setup(x => x.CountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(11);
-        repo.Setup(x => x.ListAsync(10, 10, It.IsAny<CancellationToken>())).ReturnsAsync(payments);
+
+        repo.Setup(x => x.CountAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(11);
+
+        repo.Setup(x => x.ListAsync(10, 10, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(payments);
 
         var result = await new GetPaymentsQueryHandler(repo.Object).Handle(
-            new GetPaymentsQuery(new PaginationRequest(2, 10)), CancellationToken.None);
+            new GetPaymentsQuery(new PaginationRequest(2, 10)),
+            CancellationToken.None);
 
         Assert.Equal(11, result.TotalCount);
         Assert.Equal(2, result.Items.Count);
@@ -246,27 +395,78 @@ public sealed class PaymentHandlerTests
         var repo = PaymentRepo(null);
         var gateway = new Mock<IPaymentGateway>();
 
-        await Assert.ThrowsAsync<NotFoundException>(() => new AuthorizePaymentCommandHandler(repo.Object, gateway.Object)
-            .Handle(new AuthorizePaymentCommand(id), CancellationToken.None));
-        await Assert.ThrowsAsync<NotFoundException>(() => new CapturePaymentCommandHandler(repo.Object, gateway.Object)
-            .Handle(new CapturePaymentCommand(id), CancellationToken.None));
-        await Assert.ThrowsAsync<NotFoundException>(() => new CancelPaymentCommandHandler(repo.Object)
-            .Handle(new CancelPaymentCommand(id, "Reason"), CancellationToken.None));
-        await Assert.ThrowsAsync<NotFoundException>(() => new FailPaymentCommandHandler(repo.Object)
-            .Handle(new FailPaymentCommand(id, "CODE", "Reason"), CancellationToken.None));
-        await Assert.ThrowsAsync<NotFoundException>(() => new RefundPaymentCommandHandler(repo.Object, gateway.Object)
-            .Handle(new RefundPaymentCommand(id, 10m, "Reason"), CancellationToken.None));
-        await Assert.ThrowsAsync<NotFoundException>(() => new SettlePaymentCommandHandler(repo.Object)
-            .Handle(new SettlePaymentCommand(id), CancellationToken.None));
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            CreateAuthorizeHandler(repo, gateway).Handle(
+                new AuthorizePaymentCommand(id),
+                CancellationToken.None));
+
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            CreateCaptureHandler(repo, gateway).Handle(
+                new CapturePaymentCommand(id),
+                CancellationToken.None));
+
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            new CancelPaymentCommandHandler(repo.Object).Handle(
+                new CancelPaymentCommand(id, "Reason"),
+                CancellationToken.None));
+
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            new FailPaymentCommandHandler(repo.Object).Handle(
+                new FailPaymentCommand(id, "CODE", "Reason"),
+                CancellationToken.None));
+
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            new RefundPaymentCommandHandler(repo.Object, gateway.Object).Handle(
+                new RefundPaymentCommand(id, 10m, "Reason"),
+                CancellationToken.None));
+
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            new SettlePaymentCommandHandler(repo.Object).Handle(
+                new SettlePaymentCommand(id),
+                CancellationToken.None));
+    }
+
+    private static AuthorizePaymentCommandHandler CreateAuthorizeHandler(
+        Mock<IPaymentRepository> paymentRepository,
+        Mock<IPaymentGateway> gateway)
+    {
+        return new AuthorizePaymentCommandHandler(
+            paymentRepository.Object,
+            gateway.Object,
+            new Mock<IOrderRepository>().Object,
+            new Mock<IInventoryRepository>().Object);
+    }
+
+    private static CapturePaymentCommandHandler CreateCaptureHandler(
+        Mock<IPaymentRepository> paymentRepository,
+        Mock<IPaymentGateway> gateway)
+    {
+        return new CapturePaymentCommandHandler(
+            paymentRepository.Object,
+            gateway.Object,
+            new Mock<IOrderRepository>().Object,
+            new Mock<IInventoryRepository>().Object);
     }
 
     private static Mock<IPaymentRepository> PaymentRepo(Payment? payment)
     {
         var repo = new Mock<IPaymentRepository>();
+
         if (payment is null)
-            repo.Setup(x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((Payment?)null);
+        {
+            repo.Setup(x => x.GetByIdAsync(
+                    It.IsAny<Guid>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Payment?)null);
+        }
         else
-            repo.Setup(x => x.GetByIdAsync(payment.Id, It.IsAny<CancellationToken>())).ReturnsAsync(payment);
+        {
+            repo.Setup(x => x.GetByIdAsync(
+                    payment.Id,
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(payment);
+        }
+
         return repo;
     }
 }

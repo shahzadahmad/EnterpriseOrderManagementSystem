@@ -7,4 +7,7 @@ public sealed record CreateOrderRequest
 {
     [Required]
     public Guid CustomerId { get; init; }
+
+    [Required]
+    public Guid WarehouseId { get; init; }
 }

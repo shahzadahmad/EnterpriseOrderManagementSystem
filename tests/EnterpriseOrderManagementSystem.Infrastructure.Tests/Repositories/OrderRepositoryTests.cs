@@ -1,4 +1,5 @@
-﻿using EnterpriseOrderManagementSystem.Domain.Aggregates.OrderAggregate;
+﻿
+using EnterpriseOrderManagementSystem.Domain.Aggregates.OrderAggregate;
 using EnterpriseOrderManagementSystem.Domain.Common.ValueObjects;
 using EnterpriseOrderManagementSystem.Infrastructure.Persistence.Repositories;
 using EnterpriseOrderManagementSystem.Infrastructure.Tests.Database;
@@ -30,12 +31,15 @@ public sealed class OrderRepositoryTests
             new OrderRepository(context);
 
         var customerId = Guid.NewGuid();
+        var warehouseId = Guid.NewGuid();
 
         var firstProductId = Guid.NewGuid();
         var secondProductId = Guid.NewGuid();
 
         var order =
-            Order.Create(customerId);
+            Order.Create(
+                customerId,
+                warehouseId);
 
         order.AddItem(
             firstProductId,
@@ -92,6 +96,10 @@ public sealed class OrderRepositoryTests
         Assert.Equal(
             customerId,
             result.CustomerId);
+
+        Assert.Equal(
+            warehouseId,
+            result.WarehouseId);
 
         Assert.Equal(
             order.OrderNumber,

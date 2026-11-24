@@ -177,6 +177,9 @@ namespace EnterpriseOrderManagementSystem.Infrastructure.Persistence.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<Guid>("WarehouseId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
 
                     b.HasIndex("OrderNumber")
@@ -267,29 +270,32 @@ namespace EnterpriseOrderManagementSystem.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("EnterpriseOrderManagementSystem.Domain.Aggregates.PaymentAggregate.PaymentTransaction", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Currency")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
 
                     b.Property<DateTime>("OccurredOnUtc")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("PaymentId")
+                    b.Property<Guid>("PaymentId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ProviderReference")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Reason")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("TransactionType")
                         .HasColumnType("int");
@@ -298,7 +304,7 @@ namespace EnterpriseOrderManagementSystem.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("PaymentId");
 
-                    b.ToTable("PaymentTransaction");
+                    b.ToTable("PaymentTransaction", (string)null);
                 });
 
             modelBuilder.Entity("EnterpriseOrderManagementSystem.Domain.Aggregates.ProductAggregate.Product", b =>
@@ -568,7 +574,8 @@ namespace EnterpriseOrderManagementSystem.Infrastructure.Persistence.Migrations
                     b.HasOne("EnterpriseOrderManagementSystem.Domain.Aggregates.PaymentAggregate.Payment", null)
                         .WithMany("Transactions")
                         .HasForeignKey("PaymentId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("EnterpriseOrderManagementSystem.Domain.Aggregates.ProductAggregate.Product", b =>

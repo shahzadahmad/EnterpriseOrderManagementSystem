@@ -1092,9 +1092,9 @@ public sealed class Payment : AggregateRoot<Guid>
         {
             throw new BusinessRuleViolationException(
                 "Refund amount cannot exceed the remaining refundable amount.");
+
         }
     }
-
     /// <summary>
     /// Validates the external payment provider reference
     /// associated with the refund transaction.

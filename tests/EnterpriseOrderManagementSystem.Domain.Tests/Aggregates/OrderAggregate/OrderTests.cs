@@ -1,4 +1,5 @@
-﻿using EnterpriseOrderManagementSystem.Domain.Aggregates.OrderAggregate;
+﻿
+using EnterpriseOrderManagementSystem.Domain.Aggregates.OrderAggregate;
 using EnterpriseOrderManagementSystem.Domain.Aggregates.OrderAggregate.Events;
 using EnterpriseOrderManagementSystem.Domain.Common.Exceptions;
 using EnterpriseOrderManagementSystem.Domain.Common.ValueObjects;
@@ -16,16 +17,16 @@ public sealed class OrderTests
     {
         // Arrange
         var customerId = Guid.NewGuid();
+        var warehouseId = Guid.NewGuid();
 
         // Act
-        var order = Order.Create(customerId);
+        var order = Order.Create(customerId, warehouseId);
 
         // Assert
         order.Should().NotBeNull();
-
         order.Id.Should().NotBe(Guid.Empty);
-
         order.CustomerId.Should().Be(customerId);
+        order.WarehouseId.Should().Be(warehouseId);
     }
 
     [Fact]
@@ -33,15 +34,15 @@ public sealed class OrderTests
     {
         // Arrange
         var customerId = Guid.NewGuid();
+        var warehouseId = Guid.NewGuid();
 
         // Act
-        var order1 = Order.Create(customerId);
-        var order2 = Order.Create(customerId);
+        var order1 = Order.Create(customerId, warehouseId);
+        var order2 = Order.Create(customerId, warehouseId);
 
         // Assert
         order1.Id.Should().NotBe(Guid.Empty);
         order2.Id.Should().NotBe(Guid.Empty);
-
         order1.Id.Should().NotBe(order2.Id);
     }
 
@@ -49,11 +50,24 @@ public sealed class OrderTests
     public void Create_WithEmptyCustomerId_ThrowsBusinessRuleViolationException()
     {
         // Arrange
-        // No valid CustomerId is provided.
+        var warehouseId = Guid.NewGuid();
 
         // Act
-        var action = () =>
-            Order.Create(Guid.Empty);
+        var action = () => Order.Create(Guid.Empty, warehouseId);
+
+        // Assert
+        action.Should()
+            .Throw<BusinessRuleViolationException>();
+    }
+
+    [Fact]
+    public void Create_WithEmptyWarehouseId_ThrowsBusinessRuleViolationException()
+    {
+        // Arrange
+        var customerId = Guid.NewGuid();
+
+        // Act
+        var action = () => Order.Create(customerId, Guid.Empty);
 
         // Assert
         action.Should()
@@ -65,9 +79,10 @@ public sealed class OrderTests
     {
         // Arrange
         var customerId = Guid.NewGuid();
+        var warehouseId = Guid.NewGuid();
 
         // Act
-        var order = Order.Create(customerId);
+        var order = Order.Create(customerId, warehouseId);
 
         // Assert
         order.DomainEvents
@@ -81,18 +96,17 @@ public sealed class OrderTests
     {
         // Arrange
         var customerId = Guid.NewGuid();
+        var warehouseId = Guid.NewGuid();
 
         // Act
-        var order = Order.Create(customerId);
+        var order = Order.Create(customerId, warehouseId);
 
         // Assert
         var domainEvent = order.DomainEvents
             .OfType<OrderCreatedDomainEvent>()
             .Single();
 
-        domainEvent.OrderId
-            .Should()
-            .Be(order.Id);
+        domainEvent.OrderId.Should().Be(order.Id);
     }
 
     #endregion
@@ -104,38 +118,23 @@ public sealed class OrderTests
     {
         // Arrange
         var order = CreateValidOrder();
-
         var productId = Guid.NewGuid();
+        var unitPrice = Money.Create(100m, "USD");
 
         // Act
         order.AddItem(
             productId,
             productName: "Product1",
-            unitPrice: Money.Create(100m, "USD"),
+            unitPrice: unitPrice,
             quantity: 2);
 
         // Assert
         order.Items.Should().ContainSingle();
 
-        order.Items
-            .First()
-            .ProductId
-            .Should()        
-            .Be(productId);        
-
-        order.Items
-            .First()
-            .Quantity
-            .Should()
-            .Be(2);
-
-
-        order.Items
-            .First()
-            .UnitPrice
-            .Should()
-            .Be(Money.Create(100m, "USD"));
-        
+        order.Items.First().ProductId.Should().Be(productId);
+        order.Items.First().Quantity.Should().Be(2);
+        order.Items.First().UnitPrice.Should().Be(unitPrice);
+        order.TotalAmount.Should().Be(Money.Create(200m, "USD"));
     }
 
     [Fact]
@@ -204,16 +203,13 @@ public sealed class OrderTests
     {
         // Arrange
         var order = CreateValidOrder();
-
         AddValidOrderItem(order);
 
         // Act
         order.Confirm();
 
         // Assert
-        order.Status
-            .Should()
-            .Be(OrderStatus.Confirmed);
+        order.Status.Should().Be(OrderStatus.Confirmed);
     }
 
     [Fact]
@@ -221,7 +217,6 @@ public sealed class OrderTests
     {
         // Arrange
         var order = CreateValidOrder();
-
         AddValidOrderItem(order);
 
         // Act
@@ -239,10 +234,8 @@ public sealed class OrderTests
     {
         // Arrange
         var order = CreateValidOrder();
-
         AddValidOrderItem(order);
 
-        // First confirmation should succeed
         order.Confirm();
 
         // Act
@@ -267,9 +260,7 @@ public sealed class OrderTests
         order.Cancel("Customer requested cancellation.");
 
         // Assert
-        order.Status
-            .Should()
-            .Be(OrderStatus.Cancelled);
+        order.Status.Should().Be(OrderStatus.Cancelled);
     }
 
     [Fact]
@@ -297,18 +288,15 @@ public sealed class OrderTests
     {
         // Arrange
         var order = CreateValidOrder();
-        
-        AddValidOrderItem(order);
 
+        AddValidOrderItem(order);
         order.Confirm();
 
         // Act
         order.Ship();
 
         // Assert
-        order.Status
-            .Should()
-            .Be(OrderStatus.Shipped);
+        order.Status.Should().Be(OrderStatus.Shipped);
     }
 
     [Fact]
@@ -318,7 +306,6 @@ public sealed class OrderTests
         var order = CreateValidOrder();
 
         AddValidOrderItem(order);
-
         order.Confirm();
 
         // Act
@@ -342,7 +329,6 @@ public sealed class OrderTests
         var order = CreateValidOrder();
 
         AddValidOrderItem(order);
-
         order.Confirm();
         order.Ship();
 
@@ -350,9 +336,7 @@ public sealed class OrderTests
         order.Deliver();
 
         // Assert
-        order.Status
-            .Should()
-            .Be(OrderStatus.Delivered);
+        order.Status.Should().Be(OrderStatus.Delivered);
     }
 
     [Fact]
@@ -362,7 +346,6 @@ public sealed class OrderTests
         var order = CreateValidOrder();
 
         AddValidOrderItem(order);
-
         order.Confirm();
         order.Ship();
 
@@ -382,8 +365,10 @@ public sealed class OrderTests
 
     private static Order CreateValidOrder()
     {
-        return Order.Create(
-            Guid.NewGuid());
+        var customerId = Guid.NewGuid();
+        var warehouseId = Guid.NewGuid();
+
+        return Order.Create(customerId, warehouseId);
     }
 
     private static void AddValidOrderItem(Order order)

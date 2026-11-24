@@ -1,4 +1,5 @@
-﻿using EnterpriseOrderManagementSystem.Application.Common.Exceptions;
+﻿
+using EnterpriseOrderManagementSystem.Application.Common.Exceptions;
 using EnterpriseOrderManagementSystem.Domain.Repositories;
 using MediatR;
 
@@ -7,7 +8,13 @@ namespace EnterpriseOrderManagementSystem.Application.Features.Payments.Commands
 public sealed class FailPaymentCommandHandler
     : IRequestHandler<FailPaymentCommand, Guid>
 {
+    #region Dependencies
+
     private readonly IPaymentRepository _paymentRepository;
+
+    #endregion
+
+    #region Constructor
 
     public FailPaymentCommandHandler(
         IPaymentRepository paymentRepository)
@@ -15,12 +22,17 @@ public sealed class FailPaymentCommandHandler
         _paymentRepository = paymentRepository;
     }
 
+    #endregion
+
+    #region Handle
+
     public async Task<Guid> Handle(
         FailPaymentCommand request,
         CancellationToken cancellationToken)
     {
-        #region Load Payment
+        #region Retrieve and Validate Payment
 
+        // Load payment
         var payment = await _paymentRepository.GetByIdAsync(
             request.PaymentId,
             cancellationToken);
@@ -32,16 +44,34 @@ public sealed class FailPaymentCommandHandler
                 request.PaymentId);
         }
 
+        // Validate failure code
+        if (string.IsNullOrWhiteSpace(request.FailureCode))
+        {
+            throw new ConflictException(
+                "Payment failure code is required.");
+        }
+
+        // Validate failure reason
+        if (string.IsNullOrWhiteSpace(request.FailureReason))
+        {
+            throw new ConflictException(
+                "Payment failure reason is required.");
+        }
+
         #endregion
 
-        #region Fail Payment
+        #region Fail Payment and Return Result
 
+        // Mark payment as failed
         payment.Fail(
             request.FailureCode,
             request.FailureReason);
 
-        #endregion
-
+        // Return payment ID
         return payment.Id;
+
+        #endregion
     }
+
+    #endregion
 }

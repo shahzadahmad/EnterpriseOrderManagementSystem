@@ -1,3 +1,4 @@
+
 using EnterpriseOrderManagementSystem.Application.Common.Models;
 using EnterpriseOrderManagementSystem.Application.Features.Customers.Commands;
 using EnterpriseOrderManagementSystem.Application.Features.Inventory.Commands;
@@ -148,12 +149,20 @@ public sealed class OrderValidatorTests
     [Fact]
     public void CreateOrder_ShouldAcceptValidCommand()
         => new CreateOrderCommandValidator().TestValidate(
-            new CreateOrderCommand(Guid.NewGuid())).ShouldNotHaveAnyValidationErrors();
+            new CreateOrderCommand(Guid.NewGuid(), Guid.NewGuid()))
+            .ShouldNotHaveAnyValidationErrors();
 
     [Fact]
     public void CreateOrder_ShouldRejectEmptyCustomerId()
         => new CreateOrderCommandValidator().TestValidate(
-            new CreateOrderCommand(Guid.Empty)).ShouldHaveValidationErrorFor(x => x.CustomerId);
+            new CreateOrderCommand(Guid.Empty, Guid.NewGuid()))
+            .ShouldHaveValidationErrorFor(x => x.CustomerId);
+
+    [Fact]
+    public void CreateOrder_ShouldRejectEmptyWarehouseId()
+        => new CreateOrderCommandValidator().TestValidate(
+            new CreateOrderCommand(Guid.NewGuid(), Guid.Empty))
+            .ShouldHaveValidationErrorFor(x => x.WarehouseId);
 
     [Fact]
     public void DeliverOrder_ShouldRejectEmptyId()

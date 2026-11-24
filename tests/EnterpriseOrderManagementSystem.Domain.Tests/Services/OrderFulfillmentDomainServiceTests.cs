@@ -1,4 +1,5 @@
-﻿using EnterpriseOrderManagementSystem.Domain.Aggregates.InventoryAggregate;
+﻿
+using EnterpriseOrderManagementSystem.Domain.Aggregates.InventoryAggregate;
 using EnterpriseOrderManagementSystem.Domain.Aggregates.OrderAggregate;
 using EnterpriseOrderManagementSystem.Domain.Aggregates.PaymentAggregate;
 using EnterpriseOrderManagementSystem.Domain.Common.ValueObjects;
@@ -16,8 +17,11 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
         {
             // Arrange
             var productId = Guid.NewGuid();
+            var warehouseId = Guid.NewGuid();
 
-            var order = Order.Create(Guid.NewGuid());
+            var order = Order.Create(
+                Guid.NewGuid(),
+                warehouseId);
 
             order.AddItem(
                 productId,
@@ -42,17 +46,10 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
             payment.Capture(
                 "CAPTURE-001");
 
-            var inventory = Inventory.Create(
-                Guid.NewGuid(),
+            var inventory = CreateInventoryWithStock(
                 productId,
-                Guid.NewGuid(),
-                reorderLevel: 2,
-                maximumQuantity: 100);
-
-            inventory.ReceiveStock(
                 10,
-                "PO-001",
-                "Initial stock");
+                warehouseId);
 
             // Act
             var result = _service.CanFulfill(
@@ -69,8 +66,11 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
         {
             // Arrange
             var productId = Guid.NewGuid();
+            var warehouseId = Guid.NewGuid();
 
-            var order = Order.Create(Guid.NewGuid());
+            var order = Order.Create(
+                Guid.NewGuid(),
+                warehouseId);
 
             order.AddItem(
                 productId,
@@ -95,7 +95,8 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
 
             var inventory = CreateInventoryWithStock(
                 productId,
-                10);
+                10,
+                warehouseId);
 
             // Act
             var result = _service.CanFulfill(
@@ -127,7 +128,8 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
 
             var inventory = CreateInventoryWithStock(
                 productId,
-                10);
+                10,
+                order.WarehouseId);
 
             // Act
             var result = _service.CanFulfill(
@@ -169,7 +171,8 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
 
             var inventory = CreateInventoryWithStock(
                 productId,
-                10);
+                10,
+                order.WarehouseId);
 
             // Act
             var result = _service.CanFulfill(
@@ -221,7 +224,8 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
 
             var inventory = CreateInventoryWithStock(
                 productId,
-                5);
+                5,
+                order.WarehouseId);
 
             // Act
             var result = _service.CanFulfill(
@@ -255,7 +259,8 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
 
             var inventory = CreateInventoryWithStock(
                 productId,
-                10);
+                10,
+                order.WarehouseId);
 
             // Act
             var result = _service.CanFulfill(
@@ -291,7 +296,9 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
         public void CanFulfill_ShouldThrow_WhenPaymentIsNull()
         {
             // Arrange
-            var order = Order.Create(Guid.NewGuid());
+            var order = Order.Create(
+                Guid.NewGuid(),
+                Guid.NewGuid());
 
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
@@ -305,7 +312,9 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
         public void CanFulfill_ShouldThrow_WhenInventoriesAreNull()
         {
             // Arrange
-            var order = Order.Create(Guid.NewGuid());
+            var order = Order.Create(
+                Guid.NewGuid(),
+                Guid.NewGuid());
 
             var payment = Payment.Create(
                 Guid.NewGuid(),
@@ -328,6 +337,7 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
             int quantity)
         {
             var order = Order.Create(
+                Guid.NewGuid(),
                 Guid.NewGuid());
 
             order.AddItem(
@@ -367,12 +377,13 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
 
         private static Inventory CreateInventoryWithStock(
             Guid productId,
-            int quantity)
+            int quantity,
+            Guid warehouseId)
         {
             var inventory = Inventory.Create(
                 Guid.NewGuid(),
                 productId,
-                Guid.NewGuid(),
+                warehouseId,
                 reorderLevel: 2,
                 maximumQuantity: 100);
 

@@ -1,12 +1,9 @@
-﻿using EnterpriseOrderManagementSystem.Domain.Aggregates.InventoryAggregate;
+﻿
+using EnterpriseOrderManagementSystem.Domain.Aggregates.InventoryAggregate;
 using EnterpriseOrderManagementSystem.Domain.Aggregates.OrderAggregate;
-using EnterpriseOrderManagementSystem.Domain.Aggregates.PaymentAggregate;
-using EnterpriseOrderManagementSystem.Domain.Aggregates.ProductAggregate;
 using EnterpriseOrderManagementSystem.Domain.Common.Exceptions;
 using EnterpriseOrderManagementSystem.Domain.Common.ValueObjects;
-using EnterpriseOrderManagementSystem.Domain.Enums;
 using EnterpriseOrderManagementSystem.Domain.Services;
-using Xunit;
 
 namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
 {
@@ -20,8 +17,11 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
             // Arrange
             var product1Id = Guid.NewGuid();
             var product2Id = Guid.NewGuid();
+            var warehouseId = Guid.NewGuid();
 
-            var order = Order.Create(Guid.NewGuid());
+            var order = Order.Create(
+                Guid.NewGuid(),
+                warehouseId);
 
             order.AddItem(
                 product1Id,
@@ -38,14 +38,14 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
             var inventory1 = Inventory.Create(
                 Guid.NewGuid(),
                 product1Id,
-                Guid.NewGuid(),
+                warehouseId,
                 reorderLevel: 5,
                 maximumQuantity: 100);
 
             var inventory2 = Inventory.Create(
                 Guid.NewGuid(),
                 product2Id,
-                Guid.NewGuid(),
+                warehouseId,
                 reorderLevel: 5,
                 maximumQuantity: 100);
 
@@ -100,7 +100,9 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
         public void Allocate_ShouldThrow_WhenInventoriesAreNull()
         {
             // Arrange
-            var order = Order.Create(Guid.NewGuid());
+            var order = Order.Create(
+                Guid.NewGuid(),
+                Guid.NewGuid());
 
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
@@ -113,7 +115,9 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
         public void Allocate_ShouldThrow_WhenOrderHasNoItems()
         {
             // Arrange
-            var order = Order.Create(Guid.NewGuid());
+            var order = Order.Create(
+                Guid.NewGuid(),
+                Guid.NewGuid());
 
             var inventories = Array.Empty<Inventory>();
 
@@ -135,7 +139,9 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
             // Arrange
             var productId = Guid.NewGuid();
 
-            var order = Order.Create(Guid.NewGuid());
+            var order = Order.Create(
+                Guid.NewGuid(),
+                Guid.NewGuid());
 
             order.AddItem(
                 productId,
@@ -161,8 +167,11 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
         {
             // Arrange
             var productId = Guid.NewGuid();
+            var warehouseId = Guid.NewGuid();
 
-            var order = Order.Create(Guid.NewGuid());
+            var order = Order.Create(
+                Guid.NewGuid(),
+                warehouseId);
 
             order.AddItem(
                 productId,
@@ -173,7 +182,7 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
             var inventory = Inventory.Create(
                 Guid.NewGuid(),
                 productId,
-                Guid.NewGuid(),
+                warehouseId,
                 reorderLevel: 2,
                 maximumQuantity: 100);
 
@@ -206,8 +215,11 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
         {
             // Arrange
             var productId = Guid.NewGuid();
+            var warehouseId = Guid.NewGuid();
 
-            var order = Order.Create(Guid.NewGuid());
+            var order = Order.Create(
+                Guid.NewGuid(),
+                warehouseId);
 
             order.AddItem(
                 productId,
@@ -218,7 +230,7 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
             var inventory = Inventory.Create(
                 Guid.NewGuid(),
                 productId,
-                Guid.NewGuid(),
+                warehouseId,
                 reorderLevel: 2,
                 maximumQuantity: 100);
 

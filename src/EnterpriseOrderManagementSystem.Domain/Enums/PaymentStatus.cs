@@ -6,16 +6,11 @@
 public enum PaymentStatus
 {
     Pending = 1,
-
     Authorized = 2,
-
     Captured = 3,
-
-    Settled = 4,
-
-    Refunded = 5,
-
-    Cancelled = 6,
-
-    Failed = 7
+    Failed = 4,
+    Cancelled = 5,
+    Refunded = 6,
+    Settled = 7,
+    PartiallyRefunded = 8
 }

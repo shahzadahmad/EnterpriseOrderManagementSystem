@@ -110,23 +110,28 @@ public sealed class TransactionBehaviorTests
             Times.Once);
     }
 
+
     [Fact]
     public async Task Handle_ShouldRollbackWhenSaveChangesFails()
     {
         // Arrange
-        _uow.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("save failed"));
-
         var behavior = CreateBehavior();
 
+        _uow
+            .Setup(x => x.SaveChangesAsync(
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("save failed"));
+
         // Act
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            behavior.Handle(
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => behavior.Handle(
                 new TestCommand("save-fail"),
                 _ => Task.FromResult("success"),
                 CancellationToken.None));
 
         // Assert
+        Assert.Equal("save failed", exception.Message);
+
         _uow.Verify(
             x => x.BeginTransactionAsync(It.IsAny<CancellationToken>()),
             Times.Once);
@@ -148,19 +153,23 @@ public sealed class TransactionBehaviorTests
     public async Task Handle_ShouldRollbackWhenCommitFails()
     {
         // Arrange
-        _uow.Setup(x => x.CommitTransactionAsync(It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("commit failed"));
-
         var behavior = CreateBehavior();
 
+        _uow
+            .Setup(x => x.CommitTransactionAsync(
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("commit failed"));
+
         // Act
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            behavior.Handle(
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => behavior.Handle(
                 new TestCommand("commit-fail"),
                 _ => Task.FromResult("success"),
                 CancellationToken.None));
 
         // Assert
+        Assert.Equal("commit failed", exception.Message);
+
         _uow.Verify(
             x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Once);

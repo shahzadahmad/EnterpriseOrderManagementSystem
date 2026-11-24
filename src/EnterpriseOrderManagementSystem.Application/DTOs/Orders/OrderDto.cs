@@ -5,6 +5,7 @@ namespace EnterpriseOrderManagementSystem.Application.DTOs.Orders;
 public sealed record OrderDto(
     Guid Id,
     Guid CustomerId,
+    Guid WarehouseId,
     string OrderNumber,
     OrderStatus Status,
     decimal TotalAmount,

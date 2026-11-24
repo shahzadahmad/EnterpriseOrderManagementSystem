@@ -37,19 +37,16 @@ public sealed class Order : AuditableEntity<Guid>
     {
     }
 
-    private Order(Guid customerId)
+    private Order(Guid customerId, Guid warehouseId)
     {
         Id = Guid.NewGuid();
-
         CustomerId = customerId;
+        WarehouseId = warehouseId;
 
         OrderNumber = GenerateOrderNumber();
-
         Status = OrderStatus.Pending;
-
         TotalAmount = Money.Zero("USD");
-
-        CreatedOnUtc = DateTime.UtcNow;        
+        CreatedOnUtc = DateTime.UtcNow;
     }
 
     #endregion
@@ -60,6 +57,8 @@ public sealed class Order : AuditableEntity<Guid>
     /// Customer that owns this order.
     /// </summary>
     public Guid CustomerId { get; private set; }
+
+    public Guid WarehouseId { get; private set; }
 
     /// <summary>
     /// Current Order Number
@@ -98,7 +97,7 @@ public sealed class Order : AuditableEntity<Guid>
     /// <summary>
     /// Creates a new order.
     /// </summary>
-    public static Order Create(Guid customerId)
+    public static Order Create(Guid customerId, Guid warehouseId)
     {
         if (customerId == Guid.Empty)
         {
@@ -106,7 +105,11 @@ public sealed class Order : AuditableEntity<Guid>
                 "CustomerId cannot be empty.");
         }
 
-        var order = new Order(customerId);
+        if (warehouseId == Guid.Empty)
+            throw new BusinessRuleViolationException(
+                "WarehouseId cannot be empty.");
+
+        var order = new Order(customerId, warehouseId);
 
         order.AddDomainEvent(
             new OrderCreatedDomainEvent(
@@ -239,13 +242,12 @@ public sealed class Order : AuditableEntity<Guid>
                 "Cancellation reason cannot exceed 500 characters.");
         }
 
-        if (Status is OrderStatus.Shipped
-            or OrderStatus.Delivered)
+        if (Status is not (OrderStatus.Pending or OrderStatus.Confirmed))
         {
             throw new InvalidOrderStateException(
                 Status.ToString(),
                 "Cancel");
-        }
+        }    
 
         Status = OrderStatus.Cancelled;
         CancellationReason = reason;

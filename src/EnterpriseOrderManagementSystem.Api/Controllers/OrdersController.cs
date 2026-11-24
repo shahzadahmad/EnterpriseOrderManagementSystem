@@ -27,7 +27,7 @@ public sealed class OrdersController : BaseApiController
         CancellationToken cancellationToken)
     {
         var orderId = await Sender.Send(
-            new CreateOrderCommand(request.CustomerId),
+            new CreateOrderCommand(request.CustomerId, request.WarehouseId),
             cancellationToken);
 
         return CreatedAtAction(

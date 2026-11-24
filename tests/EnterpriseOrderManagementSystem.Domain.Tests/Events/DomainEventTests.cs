@@ -361,10 +361,11 @@ public sealed class OrderDomainEventTests
     {
         // Arrange
         var customerId = Guid.NewGuid();
+        var warehouseId = Guid.NewGuid();
 
         // Act
         var order =
-            Order.Create(customerId);
+            Order.Create(customerId, warehouseId);
 
         // Assert
         var domainEvent =
@@ -510,8 +511,11 @@ public sealed class OrderDomainEventTests
 
     private static Order CreateOrderWithItem()
     {
+        var customerId = Guid.NewGuid();
+        var warehouseId = Guid.NewGuid();
+
         var order =
-            Order.Create(Guid.NewGuid());
+            Order.Create(customerId, warehouseId);
 
         order.AddItem(
             productId: Guid.NewGuid(),

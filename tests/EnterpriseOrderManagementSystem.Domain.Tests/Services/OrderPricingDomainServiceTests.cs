@@ -1,4 +1,5 @@
-﻿using EnterpriseOrderManagementSystem.Domain.Aggregates.OrderAggregate;
+﻿
+using EnterpriseOrderManagementSystem.Domain.Aggregates.OrderAggregate;
 using EnterpriseOrderManagementSystem.Domain.Aggregates.ProductAggregate;
 using EnterpriseOrderManagementSystem.Domain.Common.Exceptions;
 using EnterpriseOrderManagementSystem.Domain.Common.ValueObjects;
@@ -18,16 +19,17 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
                 "SKU-001",
                 "Laptop",
                 "Test laptop",
-                Money.Create(1000m, "USD"));            
+                Money.Create(1000m, "USD"));
 
             var order = Order.Create(
+                Guid.NewGuid(),
                 Guid.NewGuid());
 
             order.AddItem(
                 product.Id,
                 "Laptop",
                 Money.Create(1000m, "USD"),
-                2);            
+                2);
 
             // Act
             var result = _service.Calculate(
@@ -35,21 +37,10 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
                 new[] { product });
 
             // Assert
-            Assert.Equal(
-                2000m,
-                result.SubTotal);
-
-            Assert.Equal(
-                0m,
-                result.DiscountAmount);
-
-            Assert.Equal(
-                0m,
-                result.TaxAmount);
-
-            Assert.Equal(
-                2000m,
-                result.TotalAmount);
+            Assert.Equal(2000m, result.SubTotal);
+            Assert.Equal(0m, result.DiscountAmount);
+            Assert.Equal(0m, result.TaxAmount);
+            Assert.Equal(2000m, result.TotalAmount);
         }
 
         [Fact]
@@ -72,6 +63,7 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
             var monitorId = monitor.Id;
 
             var order = Order.Create(
+                Guid.NewGuid(),
                 Guid.NewGuid());
 
             order.AddItem(
@@ -85,7 +77,6 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
                 "Monitor",
                 Money.Create(500m, "USD"),
                 3);
-            
 
             // Act
             var result = _service.Calculate(
@@ -93,21 +84,10 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
                 new[] { laptop, monitor });
 
             // Assert
-            Assert.Equal(
-                3500m,
-                result.SubTotal);
-
-            Assert.Equal(
-                0m,
-                result.DiscountAmount);
-
-            Assert.Equal(
-                0m,
-                result.TaxAmount);
-
-            Assert.Equal(
-                3500m,
-                result.TotalAmount);
+            Assert.Equal(3500m, result.SubTotal);
+            Assert.Equal(0m, result.DiscountAmount);
+            Assert.Equal(0m, result.TaxAmount);
+            Assert.Equal(3500m, result.TotalAmount);
         }
 
         [Fact]
@@ -128,6 +108,7 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
         {
             // Arrange
             var order = Order.Create(
+                Guid.NewGuid(),
                 Guid.NewGuid());
 
             // Act & Assert
@@ -142,6 +123,7 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
         {
             // Arrange
             var order = Order.Create(
+                Guid.NewGuid(),
                 Guid.NewGuid());
 
             // Act & Assert
@@ -164,6 +146,7 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
             var productId = Guid.NewGuid();
 
             var order = Order.Create(
+                Guid.NewGuid(),
                 Guid.NewGuid());
 
             order.AddItem(
@@ -204,6 +187,7 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
             var productId = product.Id;
 
             var order = Order.Create(
+                Guid.NewGuid(),
                 Guid.NewGuid());
 
             order.AddItem(
@@ -239,6 +223,7 @@ namespace EnterpriseOrderManagementSystem.Domain.Tests.Services
             var productId = product.Id;
 
             var order = Order.Create(
+                Guid.NewGuid(),
                 Guid.NewGuid());
 
             order.AddItem(

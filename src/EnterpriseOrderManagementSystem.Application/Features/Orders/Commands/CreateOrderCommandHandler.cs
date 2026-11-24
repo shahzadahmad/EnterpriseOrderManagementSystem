@@ -44,7 +44,9 @@ public sealed class CreateOrderCommandHandler
                 request.CustomerId);
         }
 
-        var order = Order.Create(request.CustomerId);
+        var order = Order.Create(
+                    request.CustomerId,
+                    request.WarehouseId);
 
         await _orderRepository.AddAsync(
             order,

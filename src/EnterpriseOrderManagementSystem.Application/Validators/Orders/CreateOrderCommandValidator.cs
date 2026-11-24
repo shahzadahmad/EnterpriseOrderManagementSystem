@@ -17,6 +17,9 @@ public sealed class CreateOrderCommandValidator
         RuleFor(x => x.CustomerId)
             .NotEmpty();
 
+        RuleFor(x => x.WarehouseId)
+            .NotEmpty();
+
         #endregion
     }
 }

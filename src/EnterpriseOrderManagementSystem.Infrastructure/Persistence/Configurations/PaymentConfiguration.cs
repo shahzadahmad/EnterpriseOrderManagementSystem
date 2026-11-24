@@ -109,13 +109,21 @@ public sealed class PaymentConfiguration
 
         #endregion
 
+
         #region Payment Transactions
 
         builder.HasMany(x => x.Transactions)
             .WithOne()
             .HasForeignKey("PaymentId")
+            .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
 
+        // Explicitly configure the private backing field.
+        builder.Navigation(x => x.Transactions)
+            .HasField("_transactions")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
         #endregion
+
     }
 }
